@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "name": "{{RULE_NAME}}",
+  "description": "{{RULE_DESCRIPTION}}",
+  "author": {
+    "name": "{{AUTHOR_NAME}}",
+    "github": "{{GITHUB_USERNAME}}"
+  },
+  "rules": {
+    "language": "{{LANGUAGE}}",
+    "framework": "{{FRAMEWORK}}",
+    "style": {
+      "formatting": [],
+      "conventions": []
+    },
+    "dependencies": [],
+    "security": [],
+    "performance": [],
+    "testing": [],
+    "documentation": []
+  },
+  "prompts": {
+    "context": "",
+    "instructions": [],
+    "examples": []
+  },
+  "metadata": {
+    "tags": [],
+    "category": "",
+    "lastUpdated": "{{TIMESTAMP}}",
+    "compatibility": {
+      "cursorVersion": ">=0.1.0",
+      "platform": ["darwin", "linux", "win32"]
+    }
+  }
+} 

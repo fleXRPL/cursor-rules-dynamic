@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://patrickjs.com" target="_blank">
-    <img src="/cursor-ai-logo.png" alt="Awesome CursorRules" style="border-radius: 10px;" />
+    <img src="/cursor-ai-logo.png" alt="Awesome CursorRules" style="border-radius: 20px;" />
   </a>
 </p>
 
