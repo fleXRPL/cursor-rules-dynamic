@@ -3,14 +3,14 @@
     "displayName": "Cursor Rules Dynamic",
     "description": "Dynamic code analysis and rule enforcement for Cursor IDE",
     "version": "1.0.0",
-    "publisher": "garotm",
+    "publisher": "fleXRPL",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/garotm/awesome-cursorrules-dynamic.git"
+        "url": "git+https://github.com/fleXRPL/cursor-rules-dynamic.git"
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com",
-        "name": "cursor-rules-dynamic"
+        "name": "@flexrpl/cursor-rules-dynamic"
     },
     "engines": {
         "vscode": "^1.96.0",

@@ -5,6 +5,7 @@ A continuous integration script that runs essential checks and tests for the VSC
 ## Purpose
 
 This script automates the continuous integration process by:
+
 1. Installing dependencies
 2. Compiling TypeScript code
 3. Running ESLint checks
@@ -41,4 +42,4 @@ This script automates the continuous integration process by:
 ## Notes
 
 - Uses `xvfb-run` only in CI environments for headless testing
-- Ensures clean dependency installation with `npm ci` 
+- Ensures clean dependency installation with `npm ci`

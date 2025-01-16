@@ -5,6 +5,7 @@ A Python script for standardizing `.cursorrules` files across the project.
 ## Purpose
 
 This script standardizes all `.cursorrules` files by:
+
 1. Applying a consistent JSON structure
 2. Adding required metadata
 3. Preserving existing compatible data
@@ -86,4 +87,4 @@ This script standardizes all `.cursorrules` files by:
 - Does not delete existing data
 - Only updates files that can be parsed as JSON
 - Creates basic README.md files if missing
-- Maintains a consistent structure across all rules 
+- Maintains a consistent structure across all rules

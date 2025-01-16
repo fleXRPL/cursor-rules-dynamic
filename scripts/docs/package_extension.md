@@ -5,6 +5,7 @@ A script for packaging the VSCode extension into a distributable VSIX file.
 ## Purpose
 
 This script automates the process of creating a VSCode extension package by:
+
 1. Setting up the necessary environment
 2. Copying required files
 3. Installing packaging tools
@@ -50,4 +51,4 @@ This script automates the process of creating a VSCode extension package by:
 
 - Automatically manages the LICENSE file
 - Cleans up previous packages before creating new ones
-- Uses color-coded output for better visibility 
+- Uses color-coded output for better visibility

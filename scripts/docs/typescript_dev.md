@@ -5,6 +5,7 @@ A comprehensive development script for TypeScript-based VSCode extension develop
 ## Purpose
 
 This script automates the TypeScript development workflow by:
+
 1. Cleaning previous builds
 2. Managing dependencies
 3. Running linting checks
@@ -56,4 +57,4 @@ This script automates the TypeScript development workflow by:
 - Automatically detects and handles package-lock.json sync state
 - Provides comprehensive test coverage information
 - Uses color-coded output for better visibility
-- Maintains clean build state by removing previous artifacts 
+- Maintains clean build state by removing previous artifacts
