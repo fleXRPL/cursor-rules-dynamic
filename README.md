@@ -6,7 +6,7 @@
 [![VSCode Extension](https://img.shields.io/badge/vscode-extension-blue.svg)](https://code.visualstudio.com/api)
 [![GitHub Package Registry](https://img.shields.io/badge/github-package-green.svg)](https://github.com/features/packages)
 
-![Cursor Rules Dynamic](img/cursorrules-dynamic.tiff)
+![Cursor Rules Dynamic](img/cursor-rules-dynamic.png)
 
 A VSCode extension for dynamic management and analysis of `.cursorrules` files in your Cursor AI projects.
 
