@@ -1,8 +1,8 @@
-# Cursor Rules Dynamic v1.0.0
+# Cursor Rules Dynamic v1.0.0-alpha.1
 
 ## What's New
 
-- Initial release of Cursor Rules Dynamic extension
+- Initial alpha release of Cursor Rules Dynamic extension
 - Dynamic code analysis for project patterns
 - Automatic .cursorrules file conversion and validation
 - Project scanning functionality with intelligent updates
@@ -27,7 +27,7 @@
 
 ### From VSIX
 
-1. Download the `cursor-rules-dynamic-1.0.0.vsix` file from this release
+1. Download the `cursor-rules-dynamic-1.0.0-alpha.1.vsix` file from this release
 2. In VSCode, go to Extensions (Ctrl+Shift+X)
 3. Click the "..." menu at the top
 4. Select "Install from VSIX..."
@@ -36,13 +36,13 @@
 ### From GitHub Packages
 
 ```bash
-npm install @garotm/cursor-rules-dynamic@1.0.0
+npm install @flexrpl/cursor-rules-dynamic@1.0.0-alpha.1
 ```
 
 ## Documentation
 
-For full documentation, visit the [project wiki](https://github.com/garotm/awesome-cursorrules-dynamic/wiki).
+For full documentation, visit the [project wiki](https://github.com/fleXRPL/cursor-rules-dynamic/wiki).
 
 ## Feedback
 
-Please report any issues or suggestions in our [GitHub Issues](https://github.com/garotm/awesome-cursorrules-dynamic/issues). 
+Please report any issues or suggestions in our [GitHub Issues](https://github.com/fleXRPL/cursor-rules-dynamic/issues). 
