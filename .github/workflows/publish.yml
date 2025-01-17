@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '18.x'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@garotm'
+          scope: '@flexrpl'
       
       - name: Download artifacts from release workflow
         uses: actions/download-artifact@v4
@@ -32,7 +32,7 @@ jobs:
       - name: Configure npm for publishing
         working-directory: ./vscode-extension
         run: |
-          echo "@garotm:registry=https://npm.pkg.github.com" > .npmrc
+          echo "@flexrpl:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       
       - name: Prepare and publish package
@@ -42,7 +42,7 @@ jobs:
           cp package.json package.json.bak
           
           # Modify package.json for npm publish
-          jq '.name = "@garotm/cursor-rules-dynamic" | del(.publishConfig.name)' package.json > temp.json && mv temp.json package.json
+          jq '.name = "@flexrpl/cursor-rules-dynamic" | del(.publishConfig.name)' package.json > temp.json && mv temp.json package.json
           
           # Install dependencies without running scripts
           npm ci --ignore-scripts

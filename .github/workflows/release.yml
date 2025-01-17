@@ -28,6 +28,8 @@ jobs:
           cd vscode-extension
           npm install -g @vscode/vsce
           vsce package
+          echo "VSIX_PATH=$(find . -name '*.vsix')" >> $GITHUB_ENV
+          echo "VSIX_NAME=$(basename $(find . -name '*.vsix'))" >> $GITHUB_ENV
       
       - name: Upload VSIX to release
         uses: actions/upload-release-asset@v1
@@ -35,8 +37,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./vscode-extension/cursor-rules-dynamic-1.0.0.vsix
-          asset_name: cursor-rules-dynamic-1.0.0.vsix
+          asset_path: ./vscode-extension/${{ env.VSIX_NAME }}
+          asset_name: ${{ env.VSIX_NAME }}
           asset_content_type: application/octet-stream
       
       - name: Upload build artifacts
