@@ -1,0 +1,221 @@
+// Docker Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern containerized application using Docker:
+- Single container applications
+- Multi-stage builds
+- Custom base images
+- Development containers
+- Production images
+- CI/CD pipelines
+- Security scanning
+- Performance optimization
+
+// Project Structure
+project/
+  docker/                # Docker-related files
+    Dockerfile           # Main Dockerfile
+    Dockerfile.dev       # Development Dockerfile
+    Dockerfile.prod      # Production Dockerfile
+    .dockerignore        # Ignore patterns
+    scripts/             # Build and helper scripts
+      build.sh           # Build script
+      test.sh            # Test script
+      deploy.sh          # Deploy script
+    config/              # Configuration files
+      nginx/             # Web server config
+      supervisor/        # Process manager config
+    hooks/               # Docker build hooks
+  src/                   # Application source code
+  tests/                 # Test suite
+  docs/                  # Documentation
+
+// Development Guidelines
+1. Image Building:
+   - Use official base images
+   - Pin image versions
+   - Layer optimization
+   - Multi-stage builds
+   - Build arguments
+   - Cache management
+
+2. Runtime Configuration:
+   - Environment variables
+   - Config files
+   - Secrets management
+   - Resource limits
+   - Health checks
+   - Logging setup
+
+3. Development Workflow:
+   - Local development
+   - Hot reloading
+   - Debugging setup
+   - Test environment
+   - CI/CD integration
+   - Version control
+
+// Dependencies
+Core:
+- docker: "^24.0.0"
+- docker-buildx: "^0.11.0"
+
+Optional:
+- docker-scan: "^0.23.0"
+- docker-compose: "^2.20.0"
+
+// Code Examples:
+
+1. Multi-stage Build Pattern:
+```dockerfile
+# Build stage
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+RUN npm ci --only=production
+
+USER node
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:3000/health || exit 1
+
+CMD ["npm", "start"]
+```
+
+2. Development Container Pattern:
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+ENV NODE_ENV=development
+ENV PORT=3000
+
+EXPOSE 3000 9229
+
+CMD ["npm", "run", "dev"]
+```
+
+3. Production Container Pattern:
+```dockerfile
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    apk add --no-cache tini
+
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+USER nodejs
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["npm", "start"]
+```
+
+// Best Practices:
+1. Image Design:
+   - Layer optimization
+   - Cache utilization
+   - Size reduction
+   - Security hardening
+   - Version pinning
+   - Documentation
+
+2. Runtime Setup:
+   - Process management
+   - Signal handling
+   - Resource limits
+   - Health checks
+   - Logging strategy
+   - Error handling
+
+3. Performance:
+   - Build time
+   - Image size
+   - Startup time
+   - Resource usage
+   - Cache efficiency
+   - Network access
+
+4. Security:
+   - Root access
+   - User permissions
+   - Image scanning
+   - Secret handling
+   - Updates policy
+   - CVE monitoring
+
+// Security Considerations:
+1. Image Security:
+   - Base image
+   - Dependencies
+   - User permissions
+   - File permissions
+   - Secret handling
+   - Updates
+
+2. Runtime Security:
+   - Process isolation
+   - Resource limits
+   - Network access
+   - Volume mounts
+   - Capabilities
+   - Syscalls
+
+3. Build Security:
+   - Build context
+   - Build arguments
+   - Multi-stage
+   - Cache usage
+   - Hook scripts
+   - CI/CD 

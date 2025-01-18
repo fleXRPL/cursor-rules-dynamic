@@ -1,0 +1,269 @@
+// Flask Python Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Python web application using Flask:
+- Web applications
+- RESTful APIs
+- Admin interfaces
+- Authentication
+- File uploads
+- Database integration
+- Background tasks
+- Email handling
+
+// Project Structure
+project/
+  app/              # Application package
+    templates/      # Jinja2 templates
+    static/         # Static files
+    models/         # Database models
+    views/          # View functions
+      admin/        # Admin views
+      auth/         # Auth views
+      main/         # Main views
+    forms/          # WTForms classes
+    utils/          # Utility modules
+    extensions.py   # Flask extensions
+    config.py       # Configuration
+  migrations/       # Database migrations
+  tests/            # Test suite
+    unit/           # Unit tests
+    integration/    # Integration tests
+    conftest.py     # Test fixtures
+  instance/         # Instance config
+  logs/             # Log files
+  requirements/     # Dependencies
+    dev.txt         # Development deps
+    prod.txt        # Production deps
+  wsgi.py           # WSGI entry point
+
+// Development Guidelines
+1. Application Structure:
+   - Blueprints
+   - Extensions
+   - Models
+   - Views
+   - Forms
+   - Templates
+
+2. Code Organization:
+   - Dependency injection
+   - Service layer
+   - Repository pattern
+   - Error handling
+   - Validation
+   - Logging
+
+3. Performance:
+   - Caching
+   - Database queries
+   - Asset bundling
+   - Response time
+   - Memory usage
+   - Monitoring
+
+// Dependencies
+Core:
+- flask: "^2.3.0"
+- flask-sqlalchemy: "^3.0.0"
+- flask-migrate: "^4.0.0"
+- flask-login: "^0.6.0"
+
+Optional:
+- flask-admin: "^1.6.0"
+- flask-wtf: "^1.1.0"
+- flask-mail: "^0.9.0"
+- celery: "^5.3.0"
+
+// Code Examples:
+
+1. View Pattern:
+```python
+from flask import Blueprint, render_template, flash, redirect, url_for
+from flask_login import login_required, current_user
+
+from app.forms.post import PostForm
+from app.models.post import Post
+from app.extensions import db
+from app.utils.decorators import admin_required
+
+bp = Blueprint('blog', __name__)
+
+@bp.route('/posts')
+def list_posts():
+    """List all blog posts."""
+    posts = Post.query.order_by(Post.created_at.desc()).all()
+    return render_template('blog/list.html', posts=posts)
+
+@bp.route('/posts/new', methods=['GET', 'POST'])
+@login_required
+def create_post():
+    """Create a new blog post."""
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(
+            title=form.title.data,
+            content=form.content.data,
+            author=current_user
+        )
+        db.session.add(post)
+        db.session.commit()
+        flash('Post created successfully.', 'success')
+        return redirect(url_for('blog.list_posts'))
+    return render_template('blog/create.html', form=form)
+
+@bp.route('/posts/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_post(id):
+    """Edit an existing blog post."""
+    post = Post.query.get_or_404(id)
+    form = PostForm(obj=post)
+    
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('Post updated successfully.', 'success')
+        return redirect(url_for('blog.list_posts'))
+    
+    return render_template('blog/edit.html', form=form, post=post)
+```
+
+2. Model Pattern:
+```python
+from datetime import datetime
+from app.extensions import db
+from app.utils.slugify import slugify
+
+class Post(db.Model):
+    """Blog post model."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+    author_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id'),
+        nullable=False
+    )
+    
+    # Relationships
+    author = db.relationship('User', back_populates='posts')
+    comments = db.relationship(
+        'Comment',
+        back_populates='post',
+        cascade='all, delete-orphan'
+    )
+    
+    def __init__(self, **kwargs):
+        """Create instance."""
+        super(Post, self).__init__(**kwargs)
+        if self.title:
+            self.slug = slugify(self.title)
+    
+    def __repr__(self):
+        """Represent instance as a string."""
+        return f'<Post({self.title})>'
+    
+    @property
+    def url(self):
+        """Get URL for post."""
+        return url_for('blog.show_post', slug=self.slug)
+```
+
+3. Form Pattern:
+```python
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, BooleanField
+from wtforms.validators import DataRequired, Length, Email
+
+class PostForm(FlaskForm):
+    """Form for creating or editing a blog post."""
+    
+    title = StringField(
+        'Title',
+        validators=[
+            DataRequired(),
+            Length(min=3, max=200)
+        ]
+    )
+    
+    content = TextAreaField(
+        'Content',
+        validators=[DataRequired()]
+    )
+    
+    is_published = BooleanField('Publish?', default=True)
+    
+    def validate_title(self, field):
+        """Custom validation for title."""
+        if Post.query.filter_by(title=field.data).first():
+            raise ValidationError('Title must be unique.')
+```
+
+// Best Practices:
+1. Code Quality:
+   - Documentation
+   - Type hints
+   - Error handling
+   - Input validation
+   - Testing
+   - Logging
+
+2. Architecture:
+   - Blueprints
+   - Extensions
+   - Models
+   - Services
+   - Forms
+   - Templates
+
+3. Performance:
+   - Query optimization
+   - Caching strategy
+   - Asset bundling
+   - Response time
+   - Memory usage
+   - Monitoring
+
+4. Security:
+   - Authentication
+   - Authorization
+   - CSRF protection
+   - XSS prevention
+   - Input validation
+   - Session security
+
+// Security Considerations:
+1. Application Security:
+   - Input validation
+   - CSRF protection
+   - XSS prevention
+   - Session security
+   - Password hashing
+   - Access control
+
+2. Data Security:
+   - SQL injection
+   - Data validation
+   - File uploads
+   - User data
+   - Backups
+   - Encryption
+
+3. Infrastructure:
+   - HTTPS
+   - Firewalls
+   - Monitoring
+   - Logging
+   - Updates
+   - Deployment 

@@ -1,0 +1,307 @@
+// Electron TypeScript Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern cross-platform desktop application using Electron and TypeScript:
+- Native desktop features
+- System tray applications
+- Background processes
+- File system access
+- Native menus
+- Window management
+- IPC communication
+- Auto-updates
+
+// Project Structure
+src/
+  main/               # Main process
+    index.ts          # Entry point
+    preload.ts        # Preload scripts
+    ipc/              # IPC handlers
+    services/         # Main services
+    utils/            # Utilities
+  renderer/           # Renderer process
+    components/       # UI components
+    pages/            # Application pages
+    styles/           # Global styles
+    utils/            # Frontend utilities
+  shared/             # Shared code
+    types/            # Type definitions
+    constants/        # Shared constants
+    utils/            # Shared utilities
+  assets/             # Static assets
+tests/                # Test suite
+  main/               # Main process tests
+  renderer/           # Renderer tests
+  e2e/                # End-to-end tests
+
+// Development Guidelines
+1. Process Architecture:
+   - Main process
+   - Renderer process
+   - Preload scripts
+   - IPC patterns
+   - Window management
+   - Security context
+
+2. Application Structure:
+   - Module patterns
+   - State management
+   - Error handling
+   - File operations
+   - Native features
+   - Updates system
+
+3. Performance:
+   - Memory usage
+   - CPU usage
+   - Startup time
+   - IPC overhead
+   - Resource cleanup
+   - Background tasks
+
+// Dependencies
+Core:
+- electron: "^25.0.0"
+- typescript: "^5.0.0"
+- electron-builder: "^24.0.0"
+- electron-store: "^8.1.0"
+
+Optional:
+- electron-updater: "^6.1.1"
+- electron-log: "^4.4.8"
+- electron-devtools-installer: "^3.2.0"
+- spectron: "^19.0.0"
+
+// Code Examples:
+
+1. Main Process Pattern:
+```typescript
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { join } from 'path';
+import Store from 'electron-store';
+
+interface AppConfig {
+  windowBounds: {
+    width: number;
+    height: number;
+  };
+  theme: 'light' | 'dark';
+}
+
+class MainWindow {
+  private window: BrowserWindow | null = null;
+  private store: Store<AppConfig>;
+
+  constructor() {
+    this.store = new Store<AppConfig>({
+      defaults: {
+        windowBounds: { width: 1200, height: 800 },
+        theme: 'light'
+      }
+    });
+
+    this.setupIPC();
+  }
+
+  private setupIPC() {
+    ipcMain.handle('get-theme', () => {
+      return this.store.get('theme');
+    });
+
+    ipcMain.handle('set-theme', (_, theme: 'light' | 'dark') => {
+      this.store.set('theme', theme);
+      return theme;
+    });
+  }
+
+  async create() {
+    const { width, height } = this.store.get('windowBounds');
+
+    this.window = new BrowserWindow({
+      width,
+      height,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: join(__dirname, 'preload.js')
+      }
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      await this.window.loadURL('http://localhost:3000');
+      this.window.webContents.openDevTools();
+    } else {
+      await this.window.loadFile(join(__dirname, '../renderer/index.html'));
+    }
+
+    this.window.on('close', () => {
+      if (this.window) {
+        const bounds = this.window.getBounds();
+        this.store.set('windowBounds', bounds);
+      }
+    });
+  }
+
+  get browserWindow() {
+    return this.window;
+  }
+}
+
+export default MainWindow;
+```
+
+2. Preload Script Pattern:
+```typescript
+import { contextBridge, ipcRenderer } from 'electron';
+
+export type Theme = 'light' | 'dark';
+
+interface API {
+  theme: {
+    get: () => Promise<Theme>;
+    set: (theme: Theme) => Promise<Theme>;
+  };
+  system: {
+    platform: string;
+    arch: string;
+  };
+}
+
+const api: API = {
+  theme: {
+    get: () => ipcRenderer.invoke('get-theme'),
+    set: (theme) => ipcRenderer.invoke('set-theme', theme)
+  },
+  system: {
+    platform: process.platform,
+    arch: process.arch
+  }
+};
+
+contextBridge.exposeInMainWorld('electron', api);
+
+declare global {
+  interface Window {
+    electron: API;
+  }
+}
+```
+
+3. Renderer Process Pattern:
+```typescript
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+
+interface AppState {
+  theme: 'light' | 'dark';
+  isLoading: boolean;
+}
+
+function App() {
+  const [state, setState] = React.useState<AppState>({
+    theme: 'light',
+    isLoading: true
+  });
+
+  React.useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const theme = await window.electron.theme.get();
+        setState(prev => ({ ...prev, theme, isLoading: false }));
+      } catch (error) {
+        console.error('Failed to load theme:', error);
+        setState(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    loadTheme();
+  }, []);
+
+  const toggleTheme = async () => {
+    try {
+      const newTheme = state.theme === 'light' ? 'dark' : 'light';
+      const updatedTheme = await window.electron.theme.set(newTheme);
+      setState(prev => ({ ...prev, theme: updatedTheme }));
+    } catch (error) {
+      console.error('Failed to update theme:', error);
+    }
+  };
+
+  if (state.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className={`app ${state.theme}`}>
+      <h1>Electron App</h1>
+      <p>Platform: {window.electron.system.platform}</p>
+      <p>Architecture: {window.electron.system.arch}</p>
+      <button onClick={toggleTheme}>
+        Toggle Theme ({state.theme})
+      </button>
+    </div>
+  );
+}
+
+const root = createRoot(document.getElementById('root')!);
+root.render(<App />);
+```
+
+// Best Practices:
+1. Security:
+   - Context isolation
+   - CSP headers
+   - Input validation
+   - Secure IPC
+   - File access
+   - Native APIs
+
+2. Architecture:
+   - Process separation
+   - Module patterns
+   - State management
+   - Error handling
+   - Event handling
+   - Resource cleanup
+
+3. Performance:
+   - Memory management
+   - IPC optimization
+   - Resource loading
+   - Background tasks
+   - Window lifecycle
+   - Event debouncing
+
+4. Distribution:
+   - Code signing
+   - Auto updates
+   - Installers
+   - Platform builds
+   - Release notes
+   - Update server
+
+// Security Considerations:
+1. Process Security:
+   - Context isolation
+   - Preload scripts
+   - IPC validation
+   - CSP headers
+   - Permissions
+   - Sandboxing
+
+2. File System:
+   - Path validation
+   - Access control
+   - File operations
+   - Temp files
+   - User data
+   - Downloads
+
+3. Network Security:
+   - HTTPS only
+   - Certificate validation
+   - Content security
+   - API security
+   - Update security
+   - WebRTC 

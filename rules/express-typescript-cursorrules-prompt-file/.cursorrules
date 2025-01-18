@@ -1,0 +1,300 @@
+// Express TypeScript Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Node.js web application using Express and TypeScript:
+- RESTful APIs
+- GraphQL APIs
+- Authentication
+- Authorization
+- Database integration
+- File uploads
+- WebSocket support
+- Background jobs
+
+// Project Structure
+src/
+  api/              # API routes
+    controllers/    # Route controllers
+    middleware/     # Custom middleware
+    validators/     # Request validation
+    routes/         # Route definitions
+  config/           # Configuration
+    database.ts     # Database config
+    server.ts       # Server config
+    logger.ts       # Logging config
+  models/           # Data models
+    entities/       # Database entities
+    dtos/           # Data transfer objects
+  services/         # Business logic
+    auth/           # Authentication
+    email/          # Email service
+    storage/        # File storage
+  utils/            # Utilities
+    errors/         # Error handlers
+    logger/         # Logging utils
+    validation/     # Validation utils
+  types/            # Type definitions
+  app.ts            # Express app
+  server.ts         # Entry point
+tests/              # Test suite
+  unit/             # Unit tests
+  integration/      # Integration tests
+  e2e/              # End-to-end tests
+
+// Development Guidelines
+1. API Design:
+   - RESTful principles
+   - Resource naming
+   - Status codes
+   - Error handling
+   - Rate limiting
+   - Documentation
+
+2. Code Structure:
+   - Dependency injection
+   - Service layer
+   - Repository pattern
+   - Error handling
+   - Validation
+   - Logging
+
+3. Performance:
+   - Caching
+   - Database queries
+   - Memory usage
+   - Response time
+   - Compression
+   - Monitoring
+
+// Dependencies
+Core:
+- express: "^4.18.0"
+- typescript: "^5.0.0"
+- @types/express: "^4.17.17"
+- @types/node: "^18.16.0"
+
+Optional:
+- express-validator: "^7.0.0"
+- express-rate-limit: "^6.7.0"
+- helmet: "^7.0.0"
+- compression: "^1.7.4"
+
+// Code Examples:
+
+1. Controller Pattern:
+```typescript
+import { Request, Response, NextFunction } from 'express';
+import { UserService } from '@/services/user.service';
+import { CreateUserDto, UpdateUserDto } from '@/models/dtos/user.dto';
+import { ApiError } from '@/utils/errors/api-error';
+import { Logger } from '@/utils/logger';
+
+export class UserController {
+  constructor(
+    private userService: UserService,
+    private logger: Logger
+  ) {}
+
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const dto = new CreateUserDto(req.body);
+      const user = await this.userService.create(dto);
+      
+      this.logger.info('User created', { userId: user.id });
+      res.status(201).json(user);
+    } catch (error) {
+      this.logger.error('Failed to create user', { error });
+      next(new ApiError(400, 'Failed to create user'));
+    }
+  }
+
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const dto = new UpdateUserDto(req.body);
+      const user = await this.userService.update(id, dto);
+      
+      if (!user) {
+        throw new ApiError(404, 'User not found');
+      }
+      
+      this.logger.info('User updated', { userId: id });
+      res.json(user);
+    } catch (error) {
+      this.logger.error('Failed to update user', { error, userId: req.params.id });
+      next(error);
+    }
+  }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      await this.userService.delete(id);
+      
+      this.logger.info('User deleted', { userId: id });
+      res.status(204).send();
+    } catch (error) {
+      this.logger.error('Failed to delete user', { error, userId: req.params.id });
+      next(error);
+    }
+  }
+}
+```
+
+2. Service Pattern:
+```typescript
+import { Injectable } from '@/utils/di';
+import { UserRepository } from '@/models/repositories/user.repository';
+import { CreateUserDto, UpdateUserDto } from '@/models/dtos/user.dto';
+import { User } from '@/models/entities/user.entity';
+import { ApiError } from '@/utils/errors/api-error';
+import { Logger } from '@/utils/logger';
+
+@Injectable()
+export class UserService {
+  constructor(
+    private userRepository: UserRepository,
+    private logger: Logger
+  ) {}
+
+  async create(dto: CreateUserDto): Promise<User> {
+    const existingUser = await this.userRepository.findByEmail(dto.email);
+    
+    if (existingUser) {
+      throw new ApiError(400, 'Email already exists');
+    }
+    
+    const user = new User(dto);
+    await this.userRepository.save(user);
+    
+    this.logger.info('User created in service', { userId: user.id });
+    return user;
+  }
+
+  async update(id: string, dto: UpdateUserDto): Promise<User | null> {
+    const user = await this.userRepository.findById(id);
+    
+    if (!user) {
+      return null;
+    }
+    
+    Object.assign(user, dto);
+    await this.userRepository.save(user);
+    
+    this.logger.info('User updated in service', { userId: id });
+    return user;
+  }
+
+  async delete(id: string): Promise<void> {
+    const user = await this.userRepository.findById(id);
+    
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+    
+    await this.userRepository.delete(id);
+    this.logger.info('User deleted in service', { userId: id });
+  }
+}
+```
+
+3. Middleware Pattern:
+```typescript
+import { Request, Response, NextFunction } from 'express';
+import { verify } from 'jsonwebtoken';
+import { ApiError } from '@/utils/errors/api-error';
+import { Logger } from '@/utils/logger';
+import { config } from '@/config';
+
+export class AuthMiddleware {
+  constructor(private logger: Logger) {}
+
+  async authenticate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const token = this.extractToken(req);
+      
+      if (!token) {
+        throw new ApiError(401, 'No token provided');
+      }
+      
+      const decoded = verify(token, config.jwt.secret);
+      req.user = decoded;
+      
+      this.logger.debug('User authenticated', { userId: decoded.sub });
+      next();
+    } catch (error) {
+      this.logger.error('Authentication failed', { error });
+      next(new ApiError(401, 'Invalid token'));
+    }
+  }
+
+  private extractToken(req: Request): string | null {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+    
+    return authHeader.split(' ')[1];
+  }
+}
+```
+
+// Best Practices:
+1. Code Quality:
+   - Type safety
+   - Error handling
+   - Input validation
+   - Documentation
+   - Testing
+   - Logging
+
+2. Architecture:
+   - Layered design
+   - Dependency injection
+   - Repository pattern
+   - Service pattern
+   - Middleware
+   - Error handling
+
+3. Performance:
+   - Query optimization
+   - Caching strategy
+   - Connection pooling
+   - Memory management
+   - Response time
+   - Monitoring
+
+4. Security:
+   - Authentication
+   - Authorization
+   - Input validation
+   - Rate limiting
+   - Headers security
+   - CORS policy
+
+// Security Considerations:
+1. API Security:
+   - Input validation
+   - Rate limiting
+   - Authentication
+   - Authorization
+   - CORS policy
+   - Security headers
+
+2. Data Security:
+   - Encryption
+   - Password hashing
+   - Data validation
+   - SQL injection
+   - XSS prevention
+   - CSRF protection
+
+3. Infrastructure:
+   - HTTPS
+   - Firewalls
+   - Monitoring
+   - Logging
+   - Backups
+   - Updates 

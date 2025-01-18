@@ -1,1 +1,214 @@
-# Project SynopsisPyllments is a Python library for building graphical and API-based LLM applications through chaining together Elements in a potentially cyclic graph. Elements and Payloads are a type of Components. A Component is composed of a Model and Views. The Model handles the underlying data and logic, while the Views are the UI components that are used to display display the interactive UI used to interact with the Model. An Element is a type of Component that is responsible for a specific function. For instance, an Element can handle the LLM selection and generation by making calls to LLM providers. Another Element may handle the chat interface, whose Model would store the chat message history, and the Views would be the text boxes and buttons used to interact with the chat interface. Elements are meant to connect to other Elements through Ports. All that is necessary to link Elements together is to link the output port of one Element to the input port of Another. Each output port may have unlimited input ports it connects to, and each input port may have unlimited output ports it connects to. The ports follow an observer pattern where the output port is the subject and the input port is the observer. The subject notifies the observers when a certain event that we set within the Element is triggered. In order to connect an input and and output port, they need to be setup in a manner that sends and receives the same type of Payload. A Payload is also a Component with a Model as well as views responsible for the display logic. Elements may receive payloads and use methods of the Payload to generate the views for the UI. The sending Element is responsible for packing data into the Payload.  I am currently working on making this a fully-fledged framework.# Project OrganizationHere is an example of the file structure of an individual element:chat_interface:  - __init__.py  - chat_interface_element.py  - chat_interface_model.py  - css:    - buttons.css    - column.css    - input.css# Primary Libraries Used- Panel is used to create the visualization layer and run the GUI. Views tend to consist of Panel objects which can be styled with Python and CSS.- Param is used to create parameterized classes which help create parameters that handle type validation, default values, constraints, and most importantly, reactivity(setting event handlers to catch changes).- Langchain is responsible for the specific functions pertaining to incorporating LLM workflows.# Development PrioritiesPyllments code is prioritized on being developer-friendly, where extensibility and modularity are first-class citizens. Elements should be customizeable with clean and intuitive interfaces. It should also be easy to create new elements depending on the needs of the developer. # DocumentationDocstrings should use a NumPy/SciPy style.
+// Graphical Apps Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Python-based graphical application framework for LLM applications featuring:
+- Component-based architecture
+- Element chaining in cyclic graphs
+- Interactive UI components
+- LLM integration capabilities
+- Reactive programming patterns
+- Customizable visualization
+- Event-driven communication
+
+// Project Structure
+src/
+  components/         # Core components
+    base/             # Base classes
+      component.py    # Base component class
+      element.py      # Base element class
+      payload.py      # Base payload class
+    models/           # Data models
+      model_base.py   # Base model class
+    views/            # UI components
+      view_base.py    # Base view class
+  elements/           # Element implementations
+    chat/             # Chat interface element
+      __init__.py
+      chat_element.py
+      chat_model.py
+      css/
+        buttons.css
+        column.css
+        input.css
+    llm/              # LLM integration element
+      __init__.py
+      llm_element.py
+      llm_model.py
+  ports/              # Port system
+    input_port.py     # Input port implementation
+    output_port.py    # Output port implementation
+  utils/              # Utility functions
+    event_bus.py      # Event handling
+    type_checking.py  # Type validation
+
+// Development Guidelines
+1. Component Architecture:
+   - Use Model-View separation
+   - Implement clean interfaces
+   - Follow single responsibility
+   - Enable easy extensibility
+   - Maintain modularity
+   - Document interfaces
+
+2. Element Design:
+   - Define clear port contracts
+   - Handle payload types properly
+   - Implement event handlers
+   - Support cyclic connections
+   - Enable customization
+   - Follow observer pattern
+
+3. UI Development:
+   - Create responsive layouts
+   - Style with CSS/Python
+   - Handle user interactions
+   - Implement reactive updates
+   - Support customization
+   - Follow accessibility guidelines
+
+// Dependencies
+Core:
+- python: ">=3.8"
+- panel: "^1.0.0"
+- param: "^2.0.0"
+- langchain: "^0.1.0"
+- pydantic: "^2.0.0"
+
+Optional:
+- streamlit: "^1.0.0"
+- gradio: "^3.0.0"
+- plotly: "^5.0.0"
+- bokeh: "^3.0.0"
+
+// Code Examples:
+
+1. Element Implementation Pattern:
+```python
+from typing import Any, Dict
+import param
+from .base import Element
+from .ports import InputPort, OutputPort
+from .models import PayloadModel
+
+class ChatElement(Element):
+    """Chat interface element for handling message interactions."""
+    
+    # Reactive parameters
+    message_history = param.List(default=[])
+    current_message = param.String(default="")
+    
+    def __init__(self, **params):
+        super().__init__(**params)
+        # Setup ports
+        self.input_port = InputPort(self, PayloadModel)
+        self.output_port = OutputPort(self, PayloadModel)
+        
+        # Initialize views
+        self._setup_views()
+    
+    def _setup_views(self):
+        """Initialize and configure UI components."""
+        self.chat_view = self._create_chat_view()
+        self.input_view = self._create_input_view()
+        
+    def send_message(self, message: str):
+        """Handle sending a new message."""
+        payload = PayloadModel(content=message)
+        self.message_history.append(message)
+        self.output_port.emit(payload)
+```
+
+2. Model Implementation Pattern:
+```python
+from typing import List, Optional
+import param
+from pydantic import BaseModel
+
+class ChatMessage(BaseModel):
+    """Data model for chat messages."""
+    content: str
+    timestamp: float
+    sender: str
+
+class ChatModel(param.Parameterized):
+    """Model for managing chat state and logic."""
+    
+    messages: List[ChatMessage] = param.List([])
+    current_user: str = param.String()
+    
+    def add_message(self, content: str, sender: Optional[str] = None):
+        """Add a new message to the chat history."""
+        message = ChatMessage(
+            content=content,
+            timestamp=time.time(),
+            sender=sender or self.current_user
+        )
+        self.messages.append(message)
+        return message
+```
+
+3. View Implementation Pattern:
+```python
+import panel as pn
+from typing import Callable
+
+class ChatView:
+    """View component for chat interface."""
+    
+    def __init__(self, on_send: Callable[[str], None]):
+        self.on_send = on_send
+        self._setup_layout()
+    
+    def _setup_layout(self):
+        """Create and configure the chat interface layout."""
+        self.message_input = pn.widgets.TextInput(
+            placeholder="Type a message...",
+            css_classes=['chat-input']
+        )
+        
+        self.send_button = pn.widgets.Button(
+            name="Send",
+            button_type="primary",
+            css_classes=['send-button']
+        )
+        
+        self.send_button.on_click(self._handle_send)
+        
+        self.layout = pn.Column(
+            self.message_input,
+            self.send_button,
+            css_classes=['chat-container']
+        )
+    
+    def _handle_send(self, event):
+        """Handle send button clicks."""
+        message = self.message_input.value
+        if message.strip():
+            self.on_send(message)
+            self.message_input.value = ""
+```
+
+// Best Practices:
+1. Follow component-based architecture
+2. Implement clean interfaces
+3. Use type hints consistently
+4. Write comprehensive tests
+5. Document with docstrings
+6. Handle errors gracefully
+7. Use reactive programming
+8. Maintain separation of concerns
+9. Enable customization
+10. Follow Python style guide
+
+// Security Considerations:
+1. Validate user inputs
+2. Sanitize displayed content
+3. Handle sensitive data properly
+4. Implement rate limiting
+5. Use secure dependencies
+6. Follow CORS policies
+7. Protect against XSS
+8. Handle errors securely
+9. Implement authentication
+10. Log security events

@@ -1,1 +1,350 @@
-You are an expert AI programming assitant that primarily focues on producing clear, readable React and TypeScript code.You always use the Latest stable version of TypeScript, JavaScript, React, Node.js, Next.js App Router, Shaden UI, Tailwind CSS and you are familiar with the Latest features and best practices.You carefully provide accurate, factual, thoughtful answers, and are a genius at reasoning ai to chat, to generateCode StyLe and StructureNaming ConventionsTypeScript UsageUI and StylingPerformance OptimizationOther Rules need to follow:Don't be lazy, write all the code to implement features I ask for
+// React TypeScript with Shadcn UI Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern React application using TypeScript and Shadcn UI:
+- Component-based UIs
+- Type-safe development
+- Accessible components
+- Dark mode support
+- Form handling
+- Data tables
+- Modal dialogs
+- Toast notifications
+
+// Project Structure
+src/
+  components/      # UI components
+    ui/            # Shadcn components
+    common/        # Shared components
+    forms/         # Form components
+    layouts/       # Layout components
+  hooks/           # Custom hooks
+  lib/             # Utilities
+    utils/         # Helper functions
+    types/         # Type definitions
+    constants/     # Constants
+  styles/          # Global styles
+    themes/        # Theme definitions
+  pages/           # Route pages
+  services/        # API services
+  store/           # State management
+  tests/           # Test suite
+
+// Development Guidelines
+1. Component Development:
+   - Use TypeScript
+   - Follow React patterns
+   - Implement accessibility
+   - Handle errors
+   - Manage state
+   - Handle events
+
+2. Shadcn UI Integration:
+   - Use components
+   - Customize themes
+   - Handle variants
+   - Manage styles
+   - Follow patterns
+   - Handle props
+
+3. Performance:
+   - Optimize renders
+   - Handle loading
+   - Manage state
+   - Cache data
+   - Code splitting
+   - Bundle size
+
+// Dependencies
+Core:
+- react: "^18.0.0"
+- react-dom: "^18.0.0"
+- typescript: "^5.0.0"
+- tailwindcss: "^3.3.0"
+- shadcn-ui: "^0.1.0"
+- class-variance-authority: "^0.7.0"
+
+Optional:
+- @tanstack/react-query: "^4.0.0"
+- zustand: "^4.0.0"
+- jest: "^29.0.0"
+- @testing-library/react: "^14.0.0"
+
+// Code Examples:
+
+1. Component Pattern:
+```typescript
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
+
+interface UserFormProps extends React.HTMLAttributes<HTMLFormElement> {
+  onSubmit: (data: UserFormData) => Promise<void>;
+  initialData?: UserFormData;
+}
+
+interface UserFormData {
+  name: string;
+  email: string;
+}
+
+export function UserForm({
+  onSubmit,
+  initialData,
+  className,
+  ...props
+}: UserFormProps) {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const { toast } = useToast();
+  
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const formData = new FormData(event.currentTarget);
+      const data: UserFormData = {
+        name: formData.get('name') as string,
+        email: formData.get('email') as string
+      };
+      
+      await onSubmit(data);
+      toast({
+        title: 'Success',
+        description: 'User data saved successfully'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save user data',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <form
+      className={cn('space-y-4', className)}
+      onSubmit={handleSubmit}
+      {...props}
+    >
+      <div className="space-y-2">
+        <Input
+          name="name"
+          placeholder="Name"
+          defaultValue={initialData?.name}
+          required
+        />
+        <Input
+          name="email"
+          type="email"
+          placeholder="Email"
+          defaultValue={initialData?.email}
+          required
+        />
+      </div>
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? 'Saving...' : 'Save'}
+      </Button>
+    </form>
+  );
+}
+```
+
+2. Hook Pattern:
+```typescript
+import * as React from 'react';
+import { useToast } from '@/components/ui/use-toast';
+
+interface UseAsyncActionOptions<T> {
+  onSuccess?: (data: T) => void;
+  onError?: (error: Error) => void;
+  successMessage?: string;
+  errorMessage?: string;
+}
+
+export function useAsyncAction<T>(
+  action: () => Promise<T>,
+  options: UseAsyncActionOptions<T> = {}
+) {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const { toast } = useToast();
+  
+  const execute = React.useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      const result = await action();
+      
+      if (options.successMessage) {
+        toast({
+          title: 'Success',
+          description: options.successMessage
+        });
+      }
+      
+      options.onSuccess?.(result);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'An error occurred';
+        
+      if (options.errorMessage) {
+        toast({
+          title: 'Error',
+          description: options.errorMessage,
+          variant: 'destructive'
+        });
+      }
+      
+      options.onError?.(error as Error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [action, options, toast]);
+  
+  return {
+    execute,
+    isLoading
+  };
+}
+```
+
+3. Dialog Pattern:
+```typescript
+import * as React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+interface ConfirmDialogProps {
+  title: string;
+  description: string;
+  trigger: React.ReactNode;
+  onConfirm: () => Promise<void>;
+}
+
+export function ConfirmDialog({
+  title,
+  description,
+  trigger,
+  onConfirm
+}: ConfirmDialogProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    
+    try {
+      await onConfirm();
+      setIsOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {trigger}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {description}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Confirming...' : 'Confirm'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+// Best Practices:
+1. Component Design:
+   - Single responsibility
+   - Proper prop types
+   - Error boundaries
+   - Loading states
+   - Accessibility
+   - Documentation
+
+2. State Management:
+   - Local vs global
+   - State updates
+   - Side effects
+   - Data fetching
+   - Caching
+   - Persistence
+
+3. Performance:
+   - Memoization
+   - Code splitting
+   - Bundle size
+   - Render cycles
+   - Event handling
+   - API calls
+
+4. Testing:
+   - Unit tests
+   - Integration tests
+   - Component tests
+   - Hook tests
+   - Mock data
+   - Coverage
+
+// Security Considerations:
+1. Input Validation:
+   - Form data
+   - API responses
+   - URL parameters
+   - File uploads
+   - User input
+   - Type checking
+
+2. Authentication:
+   - Token handling
+   - Session management
+   - Protected routes
+   - Role-based access
+   - OAuth flows
+   - Security headers
+
+3. Data Protection:
+   - Sensitive data
+   - Local storage
+   - API security
+   - CORS policies
+   - XSS prevention
+   - CSRF protection

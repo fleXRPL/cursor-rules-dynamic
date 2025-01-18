@@ -1,1 +1,381 @@
-Ce projet s'appel Portfolio2Il est basé sur Next.Js, il a tailwindcss, materialui, shadcn/ui aceternityuiWhat is your project named? portfolio2Would you like to use TypeScript? YesWould you like to use ESLint? NoWould you like to use Tailwind CSS? YesWould you like to use `src/` directory? YesWould you like to use App Router? (recommended) YesWould you like to customize the default import alias (@/)? NoWhat import alias would you like configured? @/ Nola liste des dépendance  "dependencies": {  "@ckeditor/ckeditor5-react": "^6.3.0",  "@emotion/react": "^11.11.4",  "@emotion/styled": "^11.11.5",  "@mui/icons-material": "^5.15.18",  "@mui/material": "^5.15.18",  "@mui/styled-engine-sc": "^6.0.0-alpha.18",  "@prisma/client": "^5.14.0",  "autoprefixer": "^10.4.19",  "bcryptjs": "^2.4.3",  "ckeditor5": "^41.4.2",  "clsx": "^2.1.1",  "framer-motion": "^11.2.5",  "init": "^0.1.2",  "next": "^14.2.3",  "next-auth": "^4.24.7",  "react": "^18.3.1",  "react-dom": "^18.3.1",  "shadcn-ui": "^0.8.0",  "styled-components": "^6.1.11",  "tailwind-merge": "^2.3.0" }, "devDependencies": {  "@types/bcryptjs": "^2.4.6",  "@types/node": "^20",  "@types/react": "^18",  "@types/react-dom": "^18",  "postcss": "^8.4.38",  "prisma": "^5.14.0",  "tailwindcss": "^3.4.3",  "typescript": "^5.4.5" }
+// Next.js with Material UI and Tailwind CSS Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Next.js application with Material UI and Tailwind CSS:
+- Responsive layouts
+- Custom themes
+- Component library
+- Dark mode
+- Animations
+- Forms
+- Tables
+- Navigation
+- Modals
+- Cards
+- Grids
+- Typography
+
+// Project Structure
+src/
+  app/             # App router
+    layout.tsx     # Root layout
+    page.tsx       # Home page
+  components/      # Shared components
+    ui/            # UI components
+      Button/      # Button component
+      Card/        # Card component
+      Modal/       # Modal component
+    layout/        # Layout components
+      Header/      # Header component
+      Footer/      # Footer component
+      Sidebar/     # Sidebar component
+    forms/         # Form components
+    tables/        # Table components
+  theme/           # Theme configuration
+    mui/           # Material UI theme
+    tailwind/      # Tailwind config
+  styles/          # Global styles
+  hooks/           # Custom hooks
+  utils/           # Utilities
+  lib/             # Core libraries
+  types/           # TypeScript types
+  public/          # Static assets
+  tests/           # Test suite
+
+// Development Guidelines
+1. Component Structure:
+   - Material UI components
+   - Tailwind utilities
+   - Custom components
+   - Composition
+   - Props
+   - Types
+
+2. Styling:
+   - Material UI styling
+   - Tailwind classes
+   - CSS modules
+   - Theme tokens
+   - Dark mode
+   - Responsive
+
+3. Performance:
+   - Bundle size
+   - Code splitting
+   - Tree shaking
+   - Image optimization
+   - Font loading
+   - Caching
+
+// Dependencies
+Core:
+- next: "^14.0.0"
+- react: "^18.2.0"
+- react-dom: "^18.2.0"
+- @mui/material: "^5.14.0"
+- @mui/icons-material: "^5.14.0"
+- tailwindcss: "^3.3.0"
+
+Optional:
+- @emotion/react: "^11.11.0"
+- @emotion/styled: "^11.11.0"
+- clsx: "^2.0.0"
+- tailwind-merge: "^1.14.0"
+
+// Code Examples:
+
+1. Theme Setup:
+```tsx
+// src/theme/mui/theme.ts
+import { createTheme, alpha } from '@mui/material/styles';
+import { Roboto } from 'next/font/google';
+
+const roboto = Roboto({
+  weight: ['300', '400', '500', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+export const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#2563eb',
+      light: '#60a5fa',
+      dark: '#1d4ed8',
+      contrastText: '#ffffff',
+    },
+    secondary: {
+      main: '#7c3aed',
+      light: '#a78bfa',
+      dark: '#5b21b6',
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: '#ffffff',
+      paper: '#f8fafc',
+    },
+  },
+  typography: {
+    fontFamily: roboto.style.fontFamily,
+    h1: {
+      fontSize: '2.5rem',
+      fontWeight: 700,
+      lineHeight: 1.2,
+    },
+    h2: {
+      fontSize: '2rem',
+      fontWeight: 600,
+      lineHeight: 1.3,
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.5,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: '0.5rem',
+          padding: '0.5rem 1rem',
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: '1rem',
+          boxShadow: `0 4px 6px -1px ${alpha('#000000', 0.1)}, 0 2px 4px -2px ${alpha('#000000', 0.1)}`,
+        },
+      },
+    },
+  },
+});
+```
+
+2. Component Pattern:
+```tsx
+// src/components/ui/Button/Button.tsx
+import { forwardRef } from 'react';
+import { Button as MuiButton, ButtonProps as MuiButtonProps } from '@mui/material';
+import { twMerge } from 'tailwind-merge';
+
+export interface ButtonProps extends MuiButtonProps {
+  variant?: 'contained' | 'outlined' | 'text';
+  size?: 'small' | 'medium' | 'large';
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = 'contained', size = 'medium', ...props }, ref) => {
+    return (
+      <MuiButton
+        ref={ref}
+        variant={variant}
+        size={size}
+        className={twMerge(
+          'font-medium shadow-none hover:shadow-none',
+          size === 'small' && 'text-sm',
+          size === 'large' && 'text-lg',
+          variant === 'contained' && 'bg-primary-600 hover:bg-primary-700',
+          variant === 'outlined' && 'border-2',
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
+
+Button.displayName = 'Button';
+```
+
+3. Layout Pattern:
+```tsx
+// src/components/layout/Header/Header.tsx
+import { AppBar, Toolbar, IconButton, Typography, Button } from '@mui/material';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { useTheme } from '@/hooks/useTheme';
+
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
+  const { toggleTheme, isDark } = useTheme();
+
+  return (
+    <AppBar
+      position="fixed"
+      className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+    >
+      <Toolbar className="justify-between">
+        <div className="flex items-center">
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={onMenuClick}
+            className="mr-2"
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" component="div">
+            App Name
+          </Typography>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <Button color="inherit">Login</Button>
+          <IconButton
+            color="inherit"
+            onClick={toggleTheme}
+            aria-label="toggle theme"
+          >
+            {isDark ? '🌞' : '🌙'}
+          </IconButton>
+        </div>
+      </Toolbar>
+    </AppBar>
+  );
+}
+```
+
+4. Form Pattern:
+```tsx
+// src/components/forms/TextField/TextField.tsx
+import { forwardRef } from 'react';
+import { TextField as MuiTextField, TextFieldProps as MuiTextFieldProps } from '@mui/material';
+import { twMerge } from 'tailwind-merge';
+
+export interface TextFieldProps extends MuiTextFieldProps {
+  error?: boolean;
+  helperText?: string;
+}
+
+export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
+  ({ className, error, helperText, ...props }, ref) => {
+    return (
+      <MuiTextField
+        ref={ref}
+        error={error}
+        helperText={helperText}
+        className={twMerge(
+          'w-full',
+          error && 'text-red-500',
+          className
+        )}
+        InputProps={{
+          className: twMerge(
+            'rounded-lg',
+            'border-gray-300 dark:border-gray-700',
+            'bg-white dark:bg-gray-900',
+            'text-gray-900 dark:text-white',
+            error && 'border-red-500'
+          ),
+        }}
+        {...props}
+      />
+    );
+  }
+);
+
+TextField.displayName = 'TextField';
+```
+
+5. Card Pattern:
+```tsx
+// src/components/ui/Card/Card.tsx
+import { forwardRef } from 'react';
+import { Card as MuiCard, CardProps as MuiCardProps } from '@mui/material';
+import { twMerge } from 'tailwind-merge';
+
+export interface CardProps extends MuiCardProps {
+  elevation?: number;
+}
+
+export const Card = forwardRef<HTMLDivElement, CardProps>(
+  ({ className, elevation = 1, ...props }, ref) => {
+    return (
+      <MuiCard
+        ref={ref}
+        elevation={elevation}
+        className={twMerge(
+          'rounded-xl',
+          'bg-white dark:bg-gray-800',
+          'text-gray-900 dark:text-white',
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
+
+Card.displayName = 'Card';
+```
+
+// Best Practices:
+1. Component Design:
+   - Composition
+   - Reusability
+   - Accessibility
+   - Performance
+   - Testing
+   - Documentation
+
+2. Styling:
+   - Theme consistency
+   - Responsive design
+   - Dark mode
+   - Custom variants
+   - Utility classes
+   - CSS-in-JS
+
+3. Performance:
+   - Code splitting
+   - Tree shaking
+   - Bundle size
+   - Image optimization
+   - Font loading
+   - Caching
+
+4. Accessibility:
+   - ARIA labels
+   - Keyboard navigation
+   - Focus management
+   - Color contrast
+   - Screen readers
+   - Semantic HTML
+
+// Security Considerations:
+1. Client Security:
+   - Input validation
+   - XSS prevention
+   - CSRF protection
+   - Content security
+   - Error handling
+   - Logging
+
+2. Data Security:
+   - Form validation
+   - Data sanitization
+   - Access control
+   - State management
+   - Error messages
+   - Logging
+
+3. Infrastructure:
+   - HTTPS
+   - CORS
+   - CSP
+   - Rate limiting
+   - Monitoring
+   - Logging

@@ -1,1 +1,234 @@
-Act as an expert senior Elixir engineer.Stack: Elixir, Phoenix, Docker, PostgreSQL, Tailwind CSS, LeftHook, Sobelow, Credo, Ecto, ExUnit, Plug, Phoenix LiveView, Phoenix LiveDashboard, Gettext, Jason, Swoosh, Finch, DNS Cluster, File System Watcher, Release Please, ExCoveralls<type>[optional scope]: <description>[optional body][optional footer(s)]Where:type: One of the following:scope (optional): A noun describing a section of the codebase (e.g., fluxcd, deployment).description: A brief summary of the change in present tense.body (optional): A more detailed explanation of the change.footer (optional): One or more footers in the following format:
+// Elixir Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Elixir application with:
+- Scalable web applications
+- Real-time features
+- Distributed systems
+- Fault-tolerant services
+- API endpoints
+- Database integrations
+- Background jobs
+- Monitoring solutions
+
+// Project Structure
+lib/
+  my_app/          # Core application
+    application.ex # Application entry
+    supervisor.ex  # Supervision tree
+  my_app_web/      # Web interface
+    controllers/   # Request handlers
+    views/         # View templates
+    live/          # LiveView modules
+    components/    # UI components
+  contexts/        # Business domains
+    accounts/      # User accounts
+    payments/      # Payment processing
+  workers/         # Background jobs
+  schemas/         # Database schemas
+  services/        # External services
+config/            # Configuration
+  dev.exs          # Development config
+  prod.exs         # Production config
+  test.exs         # Test config
+priv/              # Private assets
+test/              # Test files
+
+// Development Guidelines
+1. Elixir Patterns:
+   - Use functional programming
+   - Implement proper supervision
+   - Handle concurrency properly
+   - Use pattern matching
+   - Implement error handling
+   - Follow OTP principles
+
+2. Phoenix Practices:
+   - Use proper contexts
+   - Implement LiveView
+   - Handle authentication
+   - Use proper channels
+   - Implement PubSub
+   - Follow conventions
+
+3. Code Organization:
+   - Separate concerns
+   - Use proper modules
+   - Implement testing
+   - Handle configuration
+   - Use proper documentation
+   - Follow standards
+
+// Dependencies
+Core:
+- elixir: "~> 1.15"
+- phoenix: "~> 1.7"
+- ecto: "~> 3.10"
+- phoenix_live_view: "~> 0.20"
+- postgrex: "~> 0.17"
+- swoosh: "~> 1.11"
+
+Optional:
+- credo: "~> 1.7"
+- sobelow: "~> 0.13"
+- excoveralls: "~> 0.18"
+- ex_machina: "~> 2.7"
+
+// Code Examples:
+
+1. Context Pattern:
+```elixir
+# lib/my_app/accounts/accounts.ex
+defmodule MyApp.Accounts do
+  @moduledoc """
+  The Accounts context.
+  """
+  
+  import Ecto.Query
+  alias MyApp.Repo
+  alias MyApp.Accounts.{User, UserToken}
+  
+  @doc """
+  Gets a user by email.
+  """
+  def get_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email)
+  end
+  
+  @doc """
+  Creates a user.
+  """
+  def create_user(attrs \\ %{}) do
+    %User{}
+    |> User.registration_changeset(attrs)
+    |> Repo.insert()
+  end
+  
+  @doc """
+  Authenticates a user by email and password.
+  """
+  def authenticate_user(email, password)
+      when is_binary(email) and is_binary(password) do
+    user = get_user_by_email(email)
+    
+    cond do
+      user && User.valid_password?(user, password) ->
+        {:ok, user}
+      
+      user ->
+        {:error, :invalid_password}
+      
+      true ->
+        {:error, :invalid_email}
+    end
+  end
+end
+```
+
+2. LiveView Pattern:
+```elixir
+# lib/my_app_web/live/user_live/index.ex
+defmodule MyAppWeb.UserLive.Index do
+  use MyAppWeb, :live_view
+  
+  alias MyApp.Accounts
+  
+  @impl true
+  def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(MyApp.PubSub, "users")
+    end
+    
+    {:ok, assign(socket, users: list_users())}
+  end
+  
+  @impl true
+  def handle_event("delete", %{"id" => id}, socket) do
+    user = Accounts.get_user!(id)
+    {:ok, _} = Accounts.delete_user(user)
+    
+    {:noreply, assign(socket, users: list_users())}
+  end
+  
+  @impl true
+  def handle_info({:user_created, user}, socket) do
+    {:noreply, update(socket, :users, &[user | &1])}
+  end
+  
+  defp list_users do
+    Accounts.list_users()
+  end
+end
+```
+
+3. GenServer Pattern:
+```elixir
+# lib/my_app/workers/email_worker.ex
+defmodule MyApp.Workers.EmailWorker do
+  use GenServer
+  require Logger
+  
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+  
+  def send_email(to, subject, body) do
+    GenServer.cast(__MODULE__, {:send_email, to, subject, body})
+  end
+  
+  @impl true
+  def init(opts) do
+    Process.flag(:trap_exit, true)
+    {:ok, opts}
+  end
+  
+  @impl true
+  def handle_cast({:send_email, to, subject, body}, state) do
+    try do
+      MyApp.Mailer.deliver_later(%{
+        to: to,
+        subject: subject,
+        body: body
+      })
+      
+      Logger.info("Email sent to #{to}")
+    rescue
+      e ->
+        Logger.error("Failed to send email: #{inspect(e)}")
+    end
+    
+    {:noreply, state}
+  end
+  
+  @impl true
+  def terminate(reason, _state) do
+    Logger.info("EmailWorker terminating: #{inspect(reason)}")
+    :ok
+  end
+end
+```
+
+// Best Practices:
+1. Follow functional paradigms
+2. Use proper supervision
+3. Handle concurrency properly
+4. Implement proper testing
+5. Use proper documentation
+6. Handle errors gracefully
+7. Follow OTP principles
+8. Use proper contexts
+9. Implement monitoring
+10. Follow conventions
+
+// Security Considerations:
+1. Validate user input
+2. Use proper authentication
+3. Implement authorization
+4. Handle sensitive data
+5. Use secure configs
+6. Implement rate limiting
+7. Handle errors securely
+8. Use proper encryption
+9. Follow security updates
+10. Audit dependencies

@@ -1,0 +1,354 @@
+// JavaScript Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern JavaScript application:
+- Single Page Applications
+- Progressive Web Apps
+- Node.js APIs
+- Real-time applications
+- CLI tools
+- Browser extensions
+- Desktop applications
+- Mobile applications
+
+// Project Structure
+project/
+  src/             # Source files
+    components/    # UI components
+    services/      # Business logic
+    utils/         # Utilities
+    hooks/         # Custom hooks
+    store/         # State management
+    api/           # API integration
+    types/         # Type definitions
+    constants/     # Constants
+  tests/           # Test suite
+    unit/          # Unit tests
+    integration/   # Integration tests
+    e2e/           # End-to-end tests
+  public/          # Static assets
+  dist/            # Production build
+
+// Development Guidelines
+1. Code Structure:
+   - ES6+ features
+   - Modules
+   - Classes
+   - Functions
+   - Error handling
+   - Async/await
+
+2. Best Practices:
+   - Clean code
+   - DRY principles
+   - SOLID principles
+   - Documentation
+   - Testing
+   - Performance
+
+3. State Management:
+   - Immutability
+   - Side effects
+   - Actions
+   - Reducers
+   - Middleware
+   - Selectors
+
+// Dependencies
+Core:
+- node: ">=18.0.0"
+- npm: ">=9.0.0"
+
+Optional:
+- axios: "^1.4.0"
+- lodash: "^4.17.21"
+- date-fns: "^2.30.0"
+- jest: "^29.5.0"
+
+// Code Examples:
+
+1. Module Pattern:
+```javascript
+// api.js
+const API_URL = process.env.API_URL || 'https://api.example.com';
+
+class ApiService {
+    constructor(baseUrl = API_URL) {
+        this.baseUrl = baseUrl;
+    }
+
+    async get(endpoint, options = {}) {
+        try {
+            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+
+    async post(endpoint, data, options = {}) {
+        try {
+            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+}
+
+export const api = new ApiService();
+```
+
+2. Service Pattern:
+```javascript
+// userService.js
+import { api } from './api';
+
+class UserService {
+    async getUser(id) {
+        try {
+            return await api.get(`/users/${id}`);
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            throw error;
+        }
+    }
+
+    async createUser(userData) {
+        try {
+            return await api.post('/users', userData);
+        } catch (error) {
+            console.error('Error creating user:', error);
+            throw error;
+        }
+    }
+
+    async updateUser(id, userData) {
+        try {
+            return await api.put(`/users/${id}`, userData);
+        } catch (error) {
+            console.error('Error updating user:', error);
+            throw error;
+        }
+    }
+
+    async deleteUser(id) {
+        try {
+            return await api.delete(`/users/${id}`);
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            throw error;
+        }
+    }
+}
+
+export const userService = new UserService();
+```
+
+3. Hook Pattern:
+```javascript
+// useAsync.js
+import { useState, useCallback } from 'react';
+
+export function useAsync(asyncFunction) {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [data, setData] = useState(null);
+
+    const execute = useCallback(async (...args) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const result = await asyncFunction(...args);
+            setData(result);
+            return result;
+        } catch (error) {
+            setError(error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    }, [asyncFunction]);
+
+    return {
+        loading,
+        error,
+        data,
+        execute
+    };
+}
+```
+
+4. Component Pattern:
+```javascript
+// UserList.jsx
+import React, { useEffect } from 'react';
+import { useAsync } from '../hooks/useAsync';
+import { userService } from '../services/userService';
+
+export function UserList() {
+    const {
+        loading,
+        error,
+        data: users,
+        execute: fetchUsers
+    } = useAsync(userService.getUsers);
+
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
+        return <div>Error: {error.message}</div>;
+    }
+
+    return (
+        <div className="user-list">
+            {users?.map(user => (
+                <div key={user.id} className="user-item">
+                    <h3>{user.name}</h3>
+                    <p>{user.email}</p>
+                </div>
+            ))}
+        </div>
+    );
+}
+```
+
+5. Store Pattern:
+```javascript
+// userSlice.js
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { userService } from '../services/userService';
+
+export const fetchUsers = createAsyncThunk(
+    'users/fetchUsers',
+    async (_, { rejectWithValue }) => {
+        try {
+            return await userService.getUsers();
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+const userSlice = createSlice({
+    name: 'users',
+    initialState: {
+        data: [],
+        loading: false,
+        error: null
+    },
+    reducers: {
+        clearError: state => {
+            state.error = null;
+        }
+    },
+    extraReducers: builder => {
+        builder
+            .addCase(fetchUsers.pending, state => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchUsers.fulfilled, (state, action) => {
+                state.loading = false;
+                state.data = action.payload;
+            })
+            .addCase(fetchUsers.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
+    }
+});
+
+export const { clearError } = userSlice.actions;
+export default userSlice.reducer;
+```
+
+// Best Practices:
+1. Code Quality:
+   - Use ESLint
+   - Use Prettier
+   - Write tests
+   - Document code
+   - Review code
+   - Refactor regularly
+
+2. Performance:
+   - Optimize bundles
+   - Lazy loading
+   - Memoization
+   - Debouncing
+   - Throttling
+   - Caching
+
+3. Security:
+   - Input validation
+   - XSS prevention
+   - CSRF protection
+   - Secure storage
+   - API security
+   - Error handling
+
+4. Testing:
+   - Unit tests
+   - Integration tests
+   - E2E tests
+   - Snapshot tests
+   - Performance tests
+   - Security tests
+
+// Security Considerations:
+1. Client-side:
+   - Input validation
+   - XSS prevention
+   - CSRF tokens
+   - Secure storage
+   - API security
+   - Error handling
+
+2. Data Security:
+   - Encryption
+   - Hashing
+   - Access control
+   - Audit logging
+   - Data validation
+   - Backups
+
+3. Infrastructure:
+   - HTTPS
+   - CORS
+   - CSP
+   - Rate limiting
+   - Monitoring
+   - Logging 

@@ -1,1 +1,259 @@
-You are an expert AI programming assistant that primarily focuses on producing clear, readable HTML, Tailwind CSS and vanilla JavaScript code.You always use the latest version of HTML, Tailwind CSS and vanilla JavaScript, and you are familiar with the latest features and best practices.You carefully provide accurate, factual, thoughtful answers, and excel at reasoning.- Follow the user’s requirements carefully & to the letter.- Confirm, then write code!- Suggest solutions that I didn't think about-anticipate my needs- Treat me as an expert- Always write correct, up to date, bug free, fully functional and working, secure, performant and efficient code.- Focus on readability over being performant.- Fully implement all requested functionality.- Leave NO todo’s, placeholders or missing pieces.- Be concise. Minimize any other prose.- Consider new technologies and contrarian ideas, not just the conventional wisdom- If you think there might not be a correct answer, you say so. If you do not know the answer, say so instead of guessing.- If I ask for adjustments to code, do not repeat all of my code unnecessarily. Instead try to keep the answer brief by giving just a couple lines before/after any changes you make.
+// HTML, Tailwind CSS & JavaScript Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+Modern, responsive web applications featuring:
+- Semantic HTML5 markup
+- Utility-first styling with Tailwind CSS
+- Interactive UIs with vanilla JavaScript
+- Responsive layouts
+- Accessible components
+- Progressive enhancement
+- Modern animations
+- Performance optimization
+
+// Project Structure
+src/
+  assets/           # Static assets
+    images/         # Image files
+    fonts/          # Font files
+  css/              # CSS styles
+    tailwind/       # Tailwind configuration
+      config.js     # Tailwind config
+      custom.css    # Custom utilities
+    styles.css      # Main stylesheet
+  js/               # JavaScript files
+    components/     # UI components
+      modal.js      # Modal component
+      dropdown.js   # Dropdown component
+    utils/          # Utility functions
+      dom.js        # DOM helpers
+      validation.js # Form validation
+    main.js         # Entry point
+  pages/            # HTML pages
+    index.html      # Home page
+    about.html      # About page
+  templates/        # Reusable templates
+    header.html     # Header component
+    footer.html     # Footer component
+
+// Development Guidelines
+1. HTML Structure:
+   - Use semantic markup
+   - Follow accessibility guidelines
+   - Implement proper SEO
+   - Maintain clean hierarchy
+   - Include meta tags
+   - Optimize for performance
+
+2. Tailwind CSS Usage:
+   - Use utility classes
+   - Follow responsive design
+   - Implement dark mode
+   - Create custom utilities
+   - Maintain consistency
+   - Optimize for production
+
+3. JavaScript Patterns:
+   - Write modular code
+   - Use modern ES6+
+   - Handle errors properly
+   - Implement event delegation
+   - Optimize performance
+   - Follow best practices
+
+// Dependencies
+Core:
+- html: "HTML5"
+- tailwindcss: "^3.4.0"
+- postcss: "^8.4.0"
+- autoprefixer: "^10.4.0"
+
+Optional:
+- alpinejs: "^3.0.0"
+- prettier: "^3.1.0"
+- eslint: "^8.0.0"
+- vite: "^5.0.0"
+
+// Code Examples:
+
+1. Responsive Component Pattern:
+```html
+<!-- Card Component -->
+<article class="group relative overflow-hidden rounded-lg shadow-md transition-transform hover:scale-105">
+  <div class="aspect-video overflow-hidden">
+    <img 
+      src="image.jpg" 
+      alt="Card image"
+      class="h-full w-full object-cover transition-transform group-hover:scale-110"
+      loading="lazy"
+    >
+  </div>
+  
+  <div class="p-4 dark:bg-gray-800">
+    <h2 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+      Card Title
+    </h2>
+    <p class="text-gray-600 dark:text-gray-300">
+      Card description with responsive text that wraps nicely.
+    </p>
+    
+    <div class="mt-4 flex items-center justify-between">
+      <button 
+        class="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        type="button"
+      >
+        Learn More
+      </button>
+      
+      <span class="text-sm text-gray-500 dark:text-gray-400">
+        5 min read
+      </span>
+    </div>
+  </div>
+</article>
+```
+
+2. JavaScript Component Pattern:
+```javascript
+// Modal Component
+class Modal {
+  constructor(options = {}) {
+    this.id = options.id || 'modal';
+    this.openTrigger = options.openTrigger || '[data-modal-trigger]';
+    this.closeTrigger = options.closeTrigger || '[data-modal-close]';
+    this.activeClass = options.activeClass || 'is-active';
+    this.onOpen = options.onOpen || (() => {});
+    this.onClose = options.onClose || (() => {});
+    
+    this.modal = document.getElementById(this.id);
+    this.isOpen = false;
+    
+    this.init();
+  }
+  
+  init() {
+    // Setup event listeners
+    document.querySelectorAll(this.openTrigger)
+      .forEach(trigger => {
+        trigger.addEventListener('click', () => this.open());
+      });
+      
+    document.querySelectorAll(this.closeTrigger)
+      .forEach(trigger => {
+        trigger.addEventListener('click', () => this.close());
+      });
+      
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isOpen) {
+        this.close();
+      }
+    });
+    
+    // Close on outside click
+    this.modal.addEventListener('click', (e) => {
+      if (e.target === this.modal) {
+        this.close();
+      }
+    });
+  }
+  
+  open() {
+    if (this.isOpen) return;
+    
+    this.modal.classList.add(this.activeClass);
+    document.body.style.overflow = 'hidden';
+    this.isOpen = true;
+    this.onOpen();
+  }
+  
+  close() {
+    if (!this.isOpen) return;
+    
+    this.modal.classList.remove(this.activeClass);
+    document.body.style.overflow = '';
+    this.isOpen = false;
+    this.onClose();
+  }
+}
+```
+
+3. Form Validation Pattern:
+```javascript
+// Form Validation Utility
+const validateForm = {
+  email: (value) => {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return {
+      isValid: pattern.test(value),
+      message: pattern.test(value) ? '' : 'Please enter a valid email address'
+    };
+  },
+  
+  password: (value) => {
+    const hasMinLength = value.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(value);
+    const hasLowerCase = /[a-z]/.test(value);
+    const hasNumber = /\d/.test(value);
+    
+    const isValid = hasMinLength && hasUpperCase && hasLowerCase && hasNumber;
+    
+    return {
+      isValid,
+      message: isValid ? '' : 'Password must be at least 8 characters and contain uppercase, lowercase, and numbers'
+    };
+  },
+  
+  required: (value) => ({
+    isValid: value.trim().length > 0,
+    message: value.trim().length > 0 ? '' : 'This field is required'
+  })
+};
+
+// Usage Example
+const form = document.querySelector('form');
+const inputs = form.querySelectorAll('[data-validate]');
+
+inputs.forEach(input => {
+  input.addEventListener('blur', () => {
+    const validationType = input.dataset.validate;
+    const result = validateForm[validationType](input.value);
+    
+    const errorElement = input.parentElement.querySelector('.error-message');
+    
+    if (!result.isValid) {
+      input.classList.add('border-red-500');
+      errorElement.textContent = result.message;
+      errorElement.classList.remove('hidden');
+    } else {
+      input.classList.remove('border-red-500');
+      errorElement.classList.add('hidden');
+    }
+  });
+});
+```
+
+// Best Practices:
+1. Write semantic HTML
+2. Follow accessibility guidelines
+3. Use responsive design
+4. Implement progressive enhancement
+5. Optimize performance
+6. Write modular code
+7. Handle errors gracefully
+8. Follow naming conventions
+9. Document code properly
+10. Test cross-browser compatibility
+
+// Security Considerations:
+1. Sanitize user inputs
+2. Prevent XSS attacks
+3. Use HTTPS
+4. Implement CSP
+5. Secure form handling
+6. Validate data client-side
+7. Handle errors securely
+8. Use secure dependencies
+9. Implement CORS properly
+10. Follow security headers

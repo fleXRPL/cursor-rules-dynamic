@@ -1,1 +1,226 @@
-This project is called PressThat.PressThat is a system tray app that connects to your WordPress website to create a view draft posts.After first installing the app, you need to configure it with your website details. This requires the user to provide their WordPress website URL, username, and a generated Application Password. Users can generate an Application Password in their WordPress dashboard at the bottom of the "Users -> Profile" page. This password is unique and can be easily revoked at any time.Here's a quick flow for how the new user experience (NUX) will work:
+// WordPress macOS System Tray Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern WordPress system tray application with:
+- WordPress REST API integration
+- Draft post creation and management
+- Secure authentication handling
+- System tray notifications
+- Cross-platform compatibility
+- User configuration management
+- Error handling and logging
+- Automated updates
+
+// Project Structure
+src/
+  main/            # Main process
+    index.ts       # Entry point
+    tray.ts        # Tray management
+    menu.ts        # Menu definitions
+  renderer/        # Renderer process
+    components/    # UI components
+    styles/        # CSS styles
+    utils/         # Utility functions
+  config/          # Configuration
+    settings.ts    # App settings
+    constants.ts   # Constants
+  services/        # Core services
+    wordpress.ts   # WP API service
+    auth.ts        # Auth handling
+  types/           # TypeScript types
+  assets/          # Static assets
+  tests/           # Test files
+
+// Development Guidelines
+1. WordPress Integration:
+   - Use REST API endpoints
+   - Implement proper authentication
+   - Handle API responses
+   - Manage draft posts
+   - Handle media uploads
+   - Implement error handling
+
+2. System Tray Patterns:
+   - Create intuitive menus
+   - Handle system events
+   - Manage notifications
+   - Handle app lifecycle
+   - Implement preferences
+   - Handle updates
+
+3. Security Practices:
+   - Store credentials safely
+   - Handle tokens securely
+   - Validate API responses
+   - Sanitize user input
+   - Implement logging
+   - Handle errors gracefully
+
+// Dependencies
+Core:
+- electron: "^27.0.0"
+- electron-store: "^8.1.0"
+- node-wordpress: "^1.0.0"
+- typescript: "^5.0.0"
+- axios: "^1.6.0"
+- electron-updater: "^6.1.0"
+
+Optional:
+- electron-log: "^5.0.0"
+- electron-builder: "^24.0.0"
+- dotenv: "^16.0.0"
+- jest: "^29.0.0"
+
+// Code Examples:
+
+1. WordPress API Service:
+```typescript
+// services/wordpress.ts
+import axios from 'axios'
+import { store } from '../config/store'
+
+interface WordPressConfig {
+  siteUrl: string
+  username: string
+  appPassword: string
+}
+
+export class WordPressService {
+  private config: WordPressConfig
+  private baseUrl: string
+
+  constructor() {
+    this.config = store.get('wordpress') as WordPressConfig
+    this.baseUrl = `${this.config.siteUrl}/wp-json/wp/v2`
+  }
+
+  async createDraft(title: string, content: string) {
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/posts`,
+        {
+          title,
+          content,
+          status: 'draft'
+        },
+        {
+          auth: {
+            username: this.config.username,
+            password: this.config.appPassword
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Failed to create draft:', error)
+      throw error
+    }
+  }
+}
+```
+
+2. System Tray Setup:
+```typescript
+// main/tray.ts
+import { app, Tray, Menu } from 'electron'
+import { createDraftWindow } from './windows'
+import { WordPressService } from '../services/wordpress'
+
+export class AppTray {
+  private tray: Tray | null = null
+  private wp: WordPressService
+
+  constructor() {
+    this.wp = new WordPressService()
+  }
+
+  create() {
+    this.tray = new Tray('assets/icon.png')
+    this.tray.setToolTip('PressThat')
+    this.setContextMenu()
+  }
+
+  private setContextMenu() {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'New Draft',
+        click: () => createDraftWindow()
+      },
+      { type: 'separator' },
+      {
+        label: 'Preferences',
+        click: () => this.showPreferences()
+      },
+      {
+        label: 'Quit',
+        click: () => app.quit()
+      }
+    ])
+    this.tray?.setContextMenu(contextMenu)
+  }
+}
+```
+
+3. Configuration Management:
+```typescript
+// config/settings.ts
+import Store from 'electron-store'
+
+interface Settings {
+  wordpress: {
+    siteUrl: string
+    username: string
+    appPassword: string
+  }
+  preferences: {
+    startAtLogin: boolean
+    notifications: boolean
+  }
+}
+
+const schema = {
+  wordpress: {
+    type: 'object',
+    properties: {
+      siteUrl: { type: 'string' },
+      username: { type: 'string' },
+      appPassword: { type: 'string' }
+    },
+    required: ['siteUrl', 'username', 'appPassword']
+  },
+  preferences: {
+    type: 'object',
+    properties: {
+      startAtLogin: { type: 'boolean' },
+      notifications: { type: 'boolean' }
+    }
+  }
+}
+
+export const store = new Store<Settings>({ schema })
+```
+
+// Best Practices:
+1. Follow WordPress coding standards
+2. Implement proper error handling
+3. Use secure authentication
+4. Handle offline scenarios
+5. Implement proper logging
+6. Use proper TypeScript patterns
+7. Handle system events properly
+8. Implement proper testing
+9. Use proper configuration
+10. Follow performance guidelines
+
+// Security Considerations:
+1. Store credentials securely
+2. Use proper authentication
+3. Implement proper validation
+4. Handle errors securely
+5. Use proper encryption
+6. Implement proper logging
+7. Handle updates securely
+8. Use proper permissions
+9. Validate API responses
+10. Follow security updates

@@ -1,0 +1,358 @@
+// Java Spring Boot Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Spring Boot application:
+- RESTful APIs
+- GraphQL APIs
+- WebSocket servers
+- Microservices
+- Authentication
+- Database integration
+- Message queues
+- Background jobs
+
+// Project Structure
+src/                                    # Source code
+  main/                                 # Main application
+    java/com/example/project/           # Package structure
+      Application.java                  # Main application class
+      config/                           # Configuration
+        SecurityConfig.java             # Security configuration
+        WebConfig.java                  # Web configuration
+      controller/                       # REST controllers
+        UserController.java             # User controller
+        ProductController.java          # Product controller
+      model/                            # Domain models
+        User.java                       # User model
+        Product.java                    # Product model
+      repository/                       # Data access
+        UserRepository.java             # User repository
+        ProductRepository.java          # Product repository
+      service/                          # Business logic
+        UserService.java                # User service
+        ProductService.java             # Product service
+      exception/                        # Custom exceptions
+        ResourceNotFoundException.java  # Resource not found exception
+        ValidationException.java        # Validation exception
+      util/                             # Utilities
+        Constants.java                  # Constants
+        DateUtils.java                  # Date utilities
+    resources/                          # Resources
+      application.yml                   # Application properties
+      db/migration/                     # Flyway migrations
+      static/                           # Static resources
+      templates/                        # Thymeleaf templates
+  test/                                 # Test suite
+    java/com/example/project/           # Test classes
+      controller/                       # Controller tests
+      service/                          # Service tests
+      repository/                       # Repository tests
+
+// Development Guidelines
+1. Code Structure:
+   - Clean architecture
+   - Dependency injection
+   - Service layer
+   - Repository pattern
+   - Exception handling
+   - Logging
+
+2. API Design:
+   - RESTful principles
+   - Versioning
+   - Documentation
+   - Validation
+   - Error handling
+   - Security
+
+3. Performance:
+   - Caching
+   - Connection pooling
+   - Query optimization
+   - Async processing
+   - Monitoring
+   - Profiling
+
+// Dependencies
+Core:
+- spring-boot-starter-web: "3.1.0"
+- spring-boot-starter-data-jpa: "3.1.0"
+- spring-boot-starter-security: "3.1.0"
+- spring-boot-starter-validation: "3.1.0"
+
+Optional:
+- spring-boot-starter-actuator: "3.1.0"
+- spring-boot-starter-cache: "3.1.0"
+- spring-boot-starter-test: "3.1.0"
+- springdoc-openapi-starter-webmvc-ui: "2.1.0"
+
+// Code Examples:
+
+1. Controller Pattern:
+```java
+package com.example.project.controller;
+
+import com.example.project.model.User;
+import com.example.project.service.UserService;
+import com.example.project.dto.UserDTO;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUser(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.findById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<UserDTO> createUser(@Valid @RequestBody UserDTO userDTO) {
+        return ResponseEntity.ok(userService.create(userDTO));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserDTO userDTO
+    ) {
+        return ResponseEntity.ok(userService.update(id, userDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+```
+
+2. Service Pattern:
+```java
+package com.example.project.service;
+
+import com.example.project.model.User;
+import com.example.project.repository.UserRepository;
+import com.example.project.dto.UserDTO;
+import com.example.project.exception.ResourceNotFoundException;
+import com.example.project.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+
+    @Transactional(readOnly = true)
+    public UserDTO findById(Long id) {
+        return userRepository.findById(id)
+                .map(userMapper::toDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    @Transactional
+    public UserDTO create(UserDTO userDTO) {
+        User user = userMapper.toEntity(userDTO);
+        user = userRepository.save(user);
+        return userMapper.toDTO(user);
+    }
+
+    @Transactional
+    public UserDTO update(Long id, UserDTO userDTO) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        userMapper.updateEntity(userDTO, user);
+        user = userRepository.save(user);
+        return userMapper.toDTO(user);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        userRepository.deleteById(id);
+    }
+}
+```
+
+3. Repository Pattern:
+```java
+package com.example.project.repository;
+
+import com.example.project.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+    
+    boolean existsByEmail(String email);
+    
+    @Query("SELECT u FROM User u WHERE u.active = true")
+    List<User> findAllActiveUsers();
+    
+    @Query(value = """
+            SELECT u.* FROM users u
+            LEFT JOIN user_roles ur ON u.id = ur.user_id
+            WHERE ur.role_id = :roleId
+            """, nativeQuery = true)
+    List<User> findByRoleId(Long roleId);
+}
+```
+
+4. Model Pattern:
+```java
+package com.example.project.model;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}
+```
+
+5. Configuration Pattern:
+```java
+package com.example.project.config;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            .csrf().disable()
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/public/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .build();
+    }
+}
+```
+
+// Best Practices:
+1. Code Quality:
+   - Clean code
+   - SOLID principles
+   - Design patterns
+   - Documentation
+   - Testing
+   - Code reviews
+
+2. Architecture:
+   - Layered architecture
+   - Microservices
+   - API Gateway
+   - Service discovery
+   - Load balancing
+   - Circuit breakers
+
+3. Performance:
+   - Caching
+   - Connection pools
+   - Query optimization
+   - Async processing
+   - Monitoring
+   - Profiling
+
+4. Security:
+   - Authentication
+   - Authorization
+   - Input validation
+   - CSRF protection
+   - XSS prevention
+   - SQL injection
+
+// Security Considerations:
+1. API Security:
+   - JWT tokens
+   - OAuth 2.0
+   - Rate limiting
+   - Input validation
+   - Error handling
+   - Logging
+
+2. Data Security:
+   - Encryption
+   - Password hashing
+   - Access control
+   - Audit logging
+   - Data validation
+   - Backups
+
+3. Infrastructure:
+   - HTTPS
+   - Firewalls
+   - Load balancers
+   - Monitoring
+   - Logging
+   - Backups 

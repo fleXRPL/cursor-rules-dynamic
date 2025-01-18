@@ -1,1 +1,295 @@
-- You are operating in a WordPress plugin context, that has a Guzzle-based HTTP client, WP REST endpoint addition(s), and new Gutenberg editor blocks.- Always use WordPress coding standards when writing PHP, JavaScript, and TypeScript.- Always type hint PHP code.- Prefer writing TypeScript over JavaScript.- Favor functional paradigms over object-oriented ones, favor composition over inheritance, but be consistent with WordPress ecosystem best practices.- Optimize for readability.
+// WordPress PHP Guzzle Gutenberg Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern WordPress plugin integrating Guzzle and Gutenberg:
+- Custom Gutenberg blocks
+- RESTful API integration
+- HTTP client functionality
+- Admin interface
+- Frontend rendering
+- Data synchronization
+- Performance optimization
+- Security features
+
+// Project Structure
+plugin-name/
+  src/
+    Blocks/           # Gutenberg blocks
+      components/     # React components
+      containers/     # Block containers
+      styles/         # Block styles
+    Http/             # HTTP client
+      Client/         # Guzzle client
+      Middleware/     # HTTP middleware
+    Admin/            # Admin interface
+      views/          # Admin pages
+      assets/         # Admin assets
+    Frontend/         # Frontend code
+      templates/      # Template files
+      assets/         # Frontend assets
+    Core/             # Core functionality
+      Services/       # Service classes
+      Models/         # Data models
+  assets/
+    js/               # JavaScript files
+    css/              # Stylesheets
+    images/           # Image assets
+  tests/              # Test suites
+    Unit/             # Unit tests
+    Integration/      # Integration tests
+  vendor/             # Composer packages
+  plugin-name.php     # Main plugin file
+
+// Development Guidelines
+1. Gutenberg Integration:
+   - Use modern React patterns
+   - Implement proper block API
+   - Handle block attributes
+   - Use proper save/edit
+   - Implement sidebar panels
+   - Handle block validation
+
+2. Guzzle Implementation:
+   - Use proper middleware
+   - Handle authentication
+   - Implement rate limiting
+   - Use proper logging
+   - Handle errors gracefully
+   - Implement caching
+
+3. WordPress Integration:
+   - Follow coding standards
+   - Use proper hooks
+   - Handle activation/deactivation
+   - Implement proper i18n
+   - Use proper capabilities
+   - Handle updates properly
+
+// Dependencies
+Core:
+- php: ">=7.4"
+- wordpress: ">=5.9"
+- guzzlehttp/guzzle: "^7.0"
+- composer/installers: "^2.0"
+- php-di/php-di: "^6.0"
+- monolog/monolog: "^2.0"
+
+Optional:
+- phpunit/phpunit: "^9.0"
+- mockery/mockery: "^1.5"
+- wp-coding-standards/wpcs: "^2.3"
+- dealerdirect/phpcodesniffer-composer-installer: "^0.7"
+- squizlabs/php_codesniffer: "^3.6"
+
+// Code Examples:
+
+1. Gutenberg Block Pattern:
+```php
+<?php
+namespace PluginName\Blocks;
+
+class ExampleBlock {
+    public function register(): void {
+        register_block_type('plugin-name/example-block', [
+            'editor_script' => 'plugin-name-block-editor',
+            'editor_style' => 'plugin-name-block-editor',
+            'style' => 'plugin-name-block',
+            'attributes' => [
+                'title' => [
+                    'type' => 'string',
+                    'default' => '',
+                ],
+                'content' => [
+                    'type' => 'string',
+                    'default' => '',
+                ],
+            ],
+            'render_callback' => [$this, 'render'],
+        ]);
+    }
+    
+    public function render(array $attributes): string {
+        $title = $attributes['title'] ?? '';
+        $content = $attributes['content'] ?? '';
+        
+        ob_start();
+        ?>
+        <div class="plugin-name-block">
+            <h2><?php echo esc_html($title); ?></h2>
+            <div><?php echo wp_kses_post($content); ?></div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+}
+```
+
+2. Guzzle Client Pattern:
+```php
+<?php
+namespace PluginName\Http\Client;
+
+use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use Psr\Log\LoggerInterface;
+
+class ApiClient {
+    private Client $client;
+    private LoggerInterface $logger;
+    
+    public function __construct(
+        LoggerInterface $logger,
+        array $config = []
+    ) {
+        $this->logger = $logger;
+        $this->client = $this->createClient($config);
+    }
+    
+    private function createClient(array $config): Client {
+        $stack = HandlerStack::create();
+        
+        // Add retry middleware
+        $stack->push(Middleware::retry(
+            function ($retries, $request, $response) {
+                if ($retries >= 3) {
+                    return false;
+                }
+                
+                if ($response && $response->getStatusCode() >= 500) {
+                    return true;
+                }
+                
+                return false;
+            },
+            function ($retries) {
+                return 1000 * pow(2, $retries);
+            }
+        ));
+        
+        // Add logging middleware
+        $stack->push(Middleware::log(
+            $this->logger,
+            new \GuzzleHttp\MessageFormatter(
+                '{method} {uri} HTTP/{version} {code}'
+            )
+        ));
+        
+        return new Client(array_merge([
+            'handler' => $stack,
+            'timeout' => 30,
+            'http_errors' => true,
+        ], $config));
+    }
+    
+    public function get(string $endpoint, array $options = []): array {
+        try {
+            $response = $this->client->get($endpoint, $options);
+            return json_decode($response->getBody(), true);
+        } catch (\Exception $e) {
+            $this->logger->error($e->getMessage(), [
+                'endpoint' => $endpoint,
+                'options' => $options,
+            ]);
+            throw $e;
+        }
+    }
+}
+```
+
+3. Plugin Integration Pattern:
+```php
+<?php
+namespace PluginName;
+
+class Plugin {
+    private static ?Plugin $instance = null;
+    private Container $container;
+    
+    public static function getInstance(): Plugin {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+    
+    private function __construct() {
+        $this->container = $this->createContainer();
+        $this->initHooks();
+    }
+    
+    private function createContainer(): Container {
+        $builder = new ContainerBuilder();
+        $builder->addDefinitions([
+            LoggerInterface::class => function () {
+                return new Logger('plugin-name');
+            },
+            ApiClient::class => function (Container $c) {
+                return new ApiClient(
+                    $c->get(LoggerInterface::class),
+                    [
+                        'base_uri' => 'https://api.example.com',
+                    ]
+                );
+            },
+        ]);
+        return $builder->build();
+    }
+    
+    private function initHooks(): void {
+        add_action('init', [$this, 'init']);
+        add_action('admin_init', [$this, 'adminInit']);
+        add_action(
+            'enqueue_block_editor_assets',
+            [$this, 'enqueueBlockAssets']
+        );
+    }
+    
+    public function init(): void {
+        load_plugin_textdomain(
+            'plugin-name',
+            false,
+            dirname(plugin_basename(__FILE__)) . '/languages'
+        );
+        
+        $this->container
+            ->get(Blocks\ExampleBlock::class)
+            ->register();
+    }
+    
+    public function activate(): void {
+        // Activation logic
+        flush_rewrite_rules();
+    }
+    
+    public function deactivate(): void {
+        // Cleanup logic
+        flush_rewrite_rules();
+    }
+}
+```
+
+// Best Practices:
+1. Follow WordPress standards
+2. Use proper security measures
+3. Implement proper caching
+4. Handle errors gracefully
+5. Use dependency injection
+6. Write comprehensive tests
+7. Document code properly
+8. Use proper logging
+9. Handle updates properly
+10. Optimize performance
+
+// Security Considerations:
+1. Validate user input
+2. Sanitize output
+3. Use nonces properly
+4. Handle capabilities
+5. Secure API requests
+6. Implement rate limiting
+7. Use proper escaping
+8. Handle file uploads
+9. Protect sensitive data
+10. Follow WordPress security

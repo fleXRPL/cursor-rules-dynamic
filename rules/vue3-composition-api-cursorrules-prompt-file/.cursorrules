@@ -1,35 +1,267 @@
-// Vue 3 Composition API .cursorrules
+// Vue 3 Composition API Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-// Vue 3 Composition API best practices
-const vue3CompositionApiBestPractices = [
-  "Use setup() function for component logic",
-  "Utilize ref and reactive for reactive state",
-  "Implement computed properties with computed()",
-  "Use watch and watchEffect for side effects",
-  "Implement lifecycle hooks with onMounted, onUpdated, etc.",
-  "Utilize provide/inject for dependency injection",
-];
+// What you can build with this ruleset:
+A modern Vue 3 application leveraging Composition API:
+- Scalable component architecture
+- Type-safe component logic
+- Reactive state management
+- Composable functionality
+- Performance optimized
+- SSR ready
+- Testing friendly
+- Maintainable codebase
 
-// Folder structure
-const folderStructure = `
+// Project Structure
 src/
-  components/
-  composables/
-  views/
-  router/
-  store/
-  assets/
-  App.vue
-  main.js
-`;
+  components/       # Reusable components
+    base/           # Base/common components
+    layout/         # Layout components
+    features/       # Feature-specific components
+  composables/      # Shared composables
+    use-auth.ts     # Authentication logic
+    use-form.ts     # Form handling
+    use-api.ts      # API interactions
+  stores/           # Pinia stores
+    modules/        # Store modules
+    index.ts        # Store exports
+  router/           # Vue Router setup
+    guards/         # Navigation guards
+    routes/         # Route definitions
+  views/            # Page components
+  utils/            # Utility functions
+  types/            # TypeScript types
+  assets/           # Static assets
+  styles/           # Global styles
 
-// Additional instructions
-const additionalInstructions = `
-1. Use TypeScript for type safety
-2. Implement proper props and emits definitions
-3. Utilize Vue 3's Teleport component when needed
-4. Use Suspense for async components
-5. Implement proper error handling
-6. Follow Vue 3 style guide and naming conventions
-7. Use Vite for fast development and building
-`;
+// Development Guidelines
+1. Composition API Patterns:
+   - Use setup() with script setup
+   - Implement proper refs/reactive
+   - Use computed properties
+   - Handle lifecycle hooks
+   - Implement proper watchers
+   - Use provide/inject properly
+
+2. Component Design:
+   - Keep components focused
+   - Use proper prop validation
+   - Implement emit contracts
+   - Handle component state
+   - Use slots effectively
+   - Implement error boundaries
+
+3. Performance:
+   - Use proper memoization
+   - Implement lazy loading
+   - Handle component updates
+   - Use proper refs
+   - Optimize renders
+   - Use proper suspense
+
+// Dependencies
+Core:
+- vue: ^3.3.0
+- vue-router: ^4.2.0
+- pinia: ^2.1.0
+- vite: ^4.4.0
+- typescript: ~5.1.0
+- vue-tsc: ^1.8.0
+
+Optional:
+- vitest: ^0.33.0
+- @vue/test-utils: ^2.4.0
+- @vueuse/core: ^10.2.0
+- unplugin-vue-components: ^0.25.0
+- vite-plugin-vue-layouts: ^0.8.0
+
+// Code Examples:
+
+1. Component Pattern:
+```vue
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import type { PropType } from 'vue'
+
+interface User {
+  id: number
+  name: string
+  email: string
+}
+
+const props = defineProps({
+  users: {
+    type: Array as PropType<User[]>,
+    required: true
+  },
+  filterKey: {
+    type: String,
+    default: ''
+  }
+})
+
+const emit = defineEmits<{
+  (e: 'select', user: User): void
+  (e: 'refresh'): void
+}>()
+
+const searchQuery = ref('')
+const isLoading = ref(false)
+
+const filteredUsers = computed(() => {
+  return props.users.filter(user => 
+    user.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
+
+async function handleUserSelect(user: User) {
+  isLoading.value = true
+  try {
+    await validateUser(user)
+    emit('select', user)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  // Initialization logic
+})
+</script>
+
+<template>
+  <div class="users-list">
+    <input
+      v-model="searchQuery"
+      placeholder="Search users..."
+      class="search-input"
+    />
+    
+    <ul v-if="filteredUsers.length">
+      <li
+        v-for="user in filteredUsers"
+        :key="user.id"
+        @click="handleUserSelect(user)"
+      >
+        {{ user.name }}
+      </li>
+    </ul>
+    
+    <p v-else>No users found</p>
+    
+    <slot name="footer" />
+  </div>
+</template>
+```
+
+2. Composable Pattern:
+```typescript
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import type { Ref } from 'vue'
+
+interface UseDataOptions {
+  immediate?: boolean
+  transform?: (data: any) => any
+}
+
+export function useData<T>(
+  fetchFn: () => Promise<T>,
+  options: UseDataOptions = {}
+) {
+  const data = ref<T | null>(null) as Ref<T | null>
+  const error = ref<Error | null>(null)
+  const loading = ref(false)
+
+  const hasData = computed(() => data.value !== null)
+
+  async function fetch() {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const result = await fetchFn()
+      data.value = options.transform 
+        ? options.transform(result)
+        : result
+    } catch (e) {
+      error.value = e as Error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  if (options.immediate) {
+    onMounted(fetch)
+  }
+
+  return {
+    data,
+    error,
+    loading,
+    hasData,
+    fetch
+  }
+}
+```
+
+3. Store Pattern:
+```typescript
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import type { User } from '@/types'
+
+export const useUserStore = defineStore('user', () => {
+  const currentUser = ref<User | null>(null)
+  const token = ref<string | null>(null)
+  
+  const isAuthenticated = computed(() => token.value !== null)
+  
+  async function login(credentials: {
+    email: string
+    password: string
+  }) {
+    const { user, token: authToken } = await api.login(credentials)
+    currentUser.value = user
+    token.value = authToken
+  }
+  
+  function logout() {
+    currentUser.value = null
+    token.value = null
+  }
+  
+  return {
+    currentUser,
+    token,
+    isAuthenticated,
+    login,
+    logout
+  }
+})
+```
+
+// Best Practices:
+1. Use Composition API consistently
+2. Implement proper typing
+3. Handle component lifecycle
+4. Use proper state management
+5. Implement error handling
+6. Write comprehensive tests
+7. Use proper composables
+8. Handle reactivity correctly
+9. Follow Vue conventions
+10. Optimize performance
+
+// Security Considerations:
+1. Validate all inputs
+2. Sanitize rendered content
+3. Handle authentication
+4. Protect sensitive data
+5. Use proper CORS
+6. Implement XSS protection
+7. Handle API security
+8. Use secure dependencies
+9. Implement CSP
+10. Handle user permissions

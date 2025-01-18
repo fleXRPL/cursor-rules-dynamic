@@ -1,37 +1,321 @@
-// HTMX with Go (Basic Setup) .cursorrules
+// HTMX with Go Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-// HTMX and Go best practices
-const htmxGoBestPractices = [
-  "Use html/template for server-side rendering",
-  "Implement http.HandlerFunc for handling HTMX requests",
-  "Utilize gorilla/mux for routing if needed",
-  "Use encoding/json for JSON responses",
-  "Implement proper error handling and logging",
-  "Utilize context for request cancellation and timeouts",
-];
+// What you can build with this ruleset:
+Modern Go web applications with HTMX integration featuring:
+- Server-side rendered templates
+- Dynamic UI updates without JavaScript
+- Efficient HTTP handlers
+- Real-time interactions
+- RESTful endpoints
+- Infinite scrolling
+- Modal dialogs
+- Live search
 
-// Folder structure
-const folderStructure = `
+// Project Structure
 cmd/
-  main.go
-internal/
-  handlers/
-  models/
-  templates/
-static/
-  css/
-  js/
-go.mod
-go.sum
-`;
+  server/          # Application entrypoint
+    main.go        # Server initialization
+internal/          # Private application code
+  handlers/        # HTTP handlers
+    items.go       # Item handlers
+    users.go       # User handlers
+    templates.go   # Template helpers
+  models/          # Data models
+    item.go        # Item model
+    user.go        # User model
+  middleware/      # HTTP middleware
+    auth.go        # Authentication
+    logging.go     # Request logging
+    csrf.go        # CSRF protection
+  templates/       # HTML templates
+    base.html      # Base template
+    components/    # Reusable components
+      form.html    # Form component
+      modal.html   # Modal component
+    pages/         # Page templates
+      index.html   # Home page
+      about.html   # About page
+static/            # Static assets
+  css/             # Stylesheets
+    main.css       # Main styles
+  js/              # JavaScript
+    htmx.min.js    # HTMX library
+go.mod             # Module definition
+go.sum             # Module checksums
 
-// Additional instructions
-const additionalInstructions = `
-1. Use semantic HTML5 elements with HTMX attributes
-2. Implement proper CSRF protection
-3. Utilize HTMX extensions when needed
-4. Use hx-boost for full page navigation
-5. Follow Go's idiomatic error handling
-6. Implement graceful shutdown for the server
-7. Use Go modules for dependency management
-`;
+// Development Guidelines
+1. Go Integration:
+   - Use http.Handler interface
+   - Implement middleware
+   - Follow idiomatic Go
+   - Use html/template
+   - Handle errors properly
+   - Follow Go conventions
+
+2. HTMX Patterns:
+   - Return partial HTML
+   - Handle form submissions
+   - Implement validation
+   - Show loading states
+   - Use proper targeting
+   - Follow REST principles
+
+3. Performance Patterns:
+   - Use goroutines safely
+   - Implement caching
+   - Handle timeouts
+   - Optimize templates
+   - Use connection pools
+   - Monitor resources
+
+// Dependencies
+Core:
+- go: ">=1.22"
+- htmx: "^1.9.0"
+- chi: "^5.0.0"
+- sqlx: "^1.3.0"
+
+Optional:
+- gorilla/csrf: "^1.7.0"
+- zap: "^1.24.0"
+- validator: "^10.0.0"
+- pgx: "^5.0.0"
+
+// Code Examples:
+
+1. HTTP Handler Pattern:
+```go
+package handlers
+
+import (
+    "html/template"
+    "net/http"
+    "strconv"
+)
+
+type ItemHandler struct {
+    tmpl *template.Template
+    db   *sqlx.DB
+}
+
+func NewItemHandler(tmpl *template.Template, db *sqlx.DB) *ItemHandler {
+    return &ItemHandler{
+        tmpl: tmpl,
+        db:   db,
+    }
+}
+
+func (h *ItemHandler) List(w http.ResponseWriter, r *http.Request) {
+    // Parse pagination params
+    page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+    if page < 1 {
+        page = 1
+    }
+    
+    // Fetch items
+    items, err := h.db.QueryContext(r.Context(), `
+        SELECT id, title, description 
+        FROM items 
+        ORDER BY created_at DESC 
+        LIMIT 10 OFFSET $1
+    `, (page-1)*10)
+    if err != nil {
+        http.Error(w, "Failed to fetch items", http.StatusInternalServerError)
+        return
+    }
+    defer items.Close()
+    
+    // Check if HTMX request
+    if r.Header.Get("HX-Request") == "true" {
+        h.tmpl.ExecuteTemplate(w, "components/item_list.html", items)
+        return
+    }
+    
+    // Regular request - full page
+    h.tmpl.ExecuteTemplate(w, "pages/items.html", items)
+}
+
+func (h *ItemHandler) Create(w http.ResponseWriter, r *http.Request) {
+    // Parse form
+    if err := r.ParseForm(); err != nil {
+        http.Error(w, "Invalid form data", http.StatusBadRequest)
+        return
+    }
+    
+    // Validate input
+    title := r.Form.Get("title")
+    description := r.Form.Get("description")
+    if title == "" || description == "" {
+        http.Error(w, "Missing required fields", http.StatusBadRequest)
+        return
+    }
+    
+    // Create item
+    var id int64
+    err := h.db.QueryRowContext(r.Context(), `
+        INSERT INTO items (title, description)
+        VALUES ($1, $2)
+        RETURNING id
+    `, title, description).Scan(&id)
+    if err != nil {
+        http.Error(w, "Failed to create item", http.StatusInternalServerError)
+        return
+    }
+    
+    // Fetch new item
+    item := struct {
+        ID          int64
+        Title       string
+        Description string
+    }{}
+    err = h.db.GetContext(r.Context(), &item, `
+        SELECT id, title, description
+        FROM items WHERE id = $1
+    `, id)
+    if err != nil {
+        http.Error(w, "Failed to fetch item", http.StatusInternalServerError)
+        return
+    }
+    
+    // Return new item HTML
+    h.tmpl.ExecuteTemplate(w, "components/item.html", item)
+}
+```
+
+2. Template Pattern:
+```html
+{{/* base.html */}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{template "title" .}}</title>
+    <script src="/static/js/htmx.min.js"></script>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    {{template "content" .}}
+</body>
+</html>
+
+{{/* components/item_list.html */}}
+{{define "item-list"}}
+<div id="items-container"
+     hx-get="/items"
+     hx-trigger="revealed"
+     hx-swap="beforeend"
+     hx-indicator=".loading">
+    
+    {{range .Items}}
+    <div class="item">
+        <h3>{{.Title}}</h3>
+        <p>{{.Description}}</p>
+        
+        <button hx-delete="/items/{{.ID}}"
+                hx-target="closest .item"
+                hx-confirm="Are you sure?">
+            Delete
+        </button>
+    </div>
+    {{end}}
+    
+    <div class="loading htmx-indicator">
+        Loading more items...
+    </div>
+</div>
+{{end}}
+
+{{/* components/item_form.html */}}
+{{define "item-form"}}
+<form hx-post="/items"
+      hx-target="#items-container"
+      hx-swap="afterbegin">
+    {{.CSRFField}}
+    
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" 
+               name="title" 
+               id="title" 
+               required>
+        <div class="error-message" id="title-error"></div>
+    </div>
+    
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea name="description" 
+                  id="description" 
+                  required></textarea>
+        <div class="error-message" id="description-error"></div>
+    </div>
+    
+    <button type="submit">Add Item</button>
+</form>
+{{end}}
+```
+
+3. Router Pattern:
+```go
+package main
+
+import (
+    "net/http"
+    
+    "github.com/go-chi/chi/v5"
+    "github.com/go-chi/chi/v5/middleware"
+)
+
+func setupRouter(h *handlers.ItemHandler) http.Handler {
+    r := chi.NewRouter()
+    
+    // Middleware
+    r.Use(middleware.Logger)
+    r.Use(middleware.Recoverer)
+    r.Use(middleware.RealIP)
+    r.Use(middleware.RequestID)
+    r.Use(middleware.Timeout(60 * time.Second))
+    
+    // Routes
+    r.Get("/", h.List)
+    r.Route("/items", func(r chi.Router) {
+        r.Get("/", h.List)
+        r.Post("/", h.Create)
+        r.Route("/{id}", func(r chi.Router) {
+            r.Get("/", h.Get)
+            r.Put("/", h.Update)
+            r.Delete("/", h.Delete)
+        })
+    })
+    
+    // Static files
+    fileServer := http.FileServer(http.Dir("static"))
+    r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+    
+    return r
+}
+```
+
+// Best Practices:
+1. Follow Go idioms
+2. Use proper interfaces
+3. Handle errors gracefully
+4. Implement middleware
+5. Optimize performance
+6. Use prepared statements
+7. Validate inputs
+8. Write unit tests
+9. Document code
+10. Follow naming conventions
+
+// Security Considerations:
+1. Enable CSRF protection
+2. Validate all inputs
+3. Sanitize HTML output
+4. Use proper headers
+5. Handle file uploads safely
+6. Implement rate limiting
+7. Use HTTPS
+8. Secure cookies
+9. Audit dependencies
+10. Log security events

@@ -1,1 +1,246 @@
-You are an expert game developer in Ruby using the DragonRuby Game Toolkit.   Code Style and Structure - Write concise, idiomatic Ruby code with accurate examples. - Follow Ruby and DragonRuby conventions and best practices. - Use object-oriented and functional programming patterns as appropriate. - Prefer iteration and modularization over code duplication. - Use descriptive variable and method names (e.g., user_signed_in?, calculate_total). - Structure files according to DragonRuby conventions.   Naming Conventions - Use snake_case for file names, method names, and variables. - Use CamelCase for class and module names. - Follow DragonRuby naming conventions.   Syntax and Formatting - Follow the Ruby Style Guide (https://rubystyle.guide/) - Use Ruby's expressive syntax (e.g., unless, ||=, &.) - Prefer single quotes for strings unless interpolation is needed.   Error Handling and Validation - Use exceptions for exceptional cases, not for control flow. - Implement proper error logging and user-friendly messages.   Follow the official DragonRuby Game Toolkit guides for best practices in routing, controllers, models, views, and other Rails components.
+// DragonRuby Game Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern DragonRuby game with:
+- 2D game mechanics
+- Sprite-based graphics
+- Physics simulations
+- Input handling
+- Sound management
+- Scene transitions
+- Collision detection
+- Performance optimization
+
+// Project Structure
+app/
+  main.rb          # Entry point
+  game/            # Game logic
+    entities/      # Game entities
+    systems/       # Game systems
+    scenes/        # Game scenes
+  lib/             # Core libraries
+    physics/       # Physics engine
+    input/         # Input handling
+    audio/         # Audio management
+  assets/          # Game assets
+    sprites/       # Image files
+    sounds/        # Audio files
+    fonts/         # Font files
+  config/          # Configuration
+  tests/           # Test suites
+
+// Development Guidelines
+1. Game Architecture:
+   - Use entity component system
+   - Implement game loop properly
+   - Handle state management
+   - Use proper scene transitions
+   - Implement input handling
+   - Manage game resources
+
+2. Performance Patterns:
+   - Optimize sprite rendering
+   - Use efficient data structures
+   - Implement object pooling
+   - Handle memory management
+   - Optimize collision detection
+   - Monitor frame rate
+
+3. Code Organization:
+   - Follow Ruby conventions
+   - Use proper namespacing
+   - Implement testing
+   - Handle configuration
+   - Use proper documentation
+   - Follow best practices
+
+// Dependencies
+Core:
+- dragonruby-gtk: "^5.0"
+- ruby: "^3.2.0"
+
+Optional:
+- dragonruby-gtk-contrib: "^2.0"
+- minitest: "^5.0"
+- rake: "^13.0"
+
+// Code Examples:
+
+1. Game Entity Pattern:
+```ruby
+# game/entities/player.rb
+module Game
+  module Entities
+    class Player
+      attr_sprite
+      
+      def initialize(args)
+        @x = 100
+        @y = 100
+        @w = 32
+        @h = 32
+        @path = 'sprites/player.png'
+        @velocity_x = 0
+        @velocity_y = 0
+      end
+      
+      def update(args)
+        handle_input(args)
+        update_position
+        handle_collisions(args)
+      end
+      
+      private
+      
+      def handle_input(args)
+        @velocity_x = 0
+        @velocity_x -= 5 if args.inputs.keyboard.key_held.left
+        @velocity_x += 5 if args.inputs.keyboard.key_held.right
+      end
+      
+      def update_position
+        @x += @velocity_x
+        @y += @velocity_y
+      end
+      
+      def handle_collisions(args)
+        # Collision detection logic
+      end
+    end
+  end
+end
+```
+
+2. Scene Management Pattern:
+```ruby
+# game/scenes/game_scene.rb
+module Game
+  module Scenes
+    class GameScene
+      def initialize(args)
+        @player = Entities::Player.new(args)
+        @enemies = []
+        @score = 0
+      end
+      
+      def tick(args)
+        handle_input(args)
+        update(args)
+        render(args)
+      end
+      
+      private
+      
+      def handle_input(args)
+        if args.inputs.keyboard.key_down.escape
+          args.state.scene = :menu
+        end
+      end
+      
+      def update(args)
+        @player.update(args)
+        @enemies.each { |enemy| enemy.update(args) }
+        check_collisions
+      end
+      
+      def render(args)
+        args.outputs.sprites << @player
+        @enemies.each { |enemy| args.outputs.sprites << enemy }
+        render_ui(args)
+      end
+      
+      def render_ui(args)
+        args.outputs.labels << {
+          x: 40,
+          y: 680,
+          text: "Score: #{@score}",
+          size_enum: 2
+        }
+      end
+    end
+  end
+end
+```
+
+3. Physics System Pattern:
+```ruby
+# lib/physics/collision_system.rb
+module Physics
+  class CollisionSystem
+    def initialize
+      @spatial_hash = {}
+      @cell_size = 32
+    end
+    
+    def add_entity(entity)
+      cells = get_occupied_cells(entity)
+      cells.each do |cell|
+        @spatial_hash[cell] ||= []
+        @spatial_hash[cell] << entity
+      end
+    end
+    
+    def check_collisions(entity)
+      cells = get_occupied_cells(entity)
+      potential_collisions = cells.flat_map do |cell|
+        @spatial_hash[cell] || []
+      end.uniq
+      
+      potential_collisions.reject! { |e| e == entity }
+      
+      potential_collisions.select do |other|
+        entities_collide?(entity, other)
+      end
+    end
+    
+    private
+    
+    def get_occupied_cells(entity)
+      start_x = (entity.x / @cell_size).floor
+      start_y = (entity.y / @cell_size).floor
+      end_x = ((entity.x + entity.w) / @cell_size).floor
+      end_y = ((entity.y + entity.h) / @cell_size).floor
+      
+      cells = []
+      (start_x..end_x).each do |x|
+        (start_y..end_y).each do |y|
+          cells << [x, y]
+        end
+      end
+      cells
+    end
+    
+    def entities_collide?(a, b)
+      a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+    end
+  end
+end
+```
+
+// Best Practices:
+1. Follow Ruby conventions
+2. Use proper game architecture
+3. Implement efficient updates
+4. Handle input properly
+5. Manage game state
+6. Use proper collision detection
+7. Implement proper testing
+8. Handle resource loading
+9. Use proper documentation
+10. Monitor performance
+
+// Security Considerations:
+1. Validate user input
+2. Handle file access safely
+3. Manage memory properly
+4. Use secure dependencies
+5. Implement proper logging
+6. Handle errors gracefully
+7. Use proper serialization
+8. Protect game assets
+9. Handle saves securely
+10. Follow security updates

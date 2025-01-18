@@ -1,0 +1,400 @@
+// Laravel PHP Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Laravel application:
+- RESTful APIs
+- Web applications
+- Admin panels
+- Authentication
+- File uploads
+- Queue workers
+- Real-time features
+- Background jobs
+
+// Project Structure
+app/
+  Console/          # Console commands
+    Commands/       # Command classes
+  Http/             # HTTP layer
+    Controllers/    # Request handlers
+    Middleware/     # Request filters
+    Requests/       # Form requests
+    Resources/      # API resources
+  Models/           # Eloquent models
+  Services/         # Business logic
+  Repositories/     # Data access
+  Events/           # Event classes
+  Listeners/        # Event listeners
+  Jobs/             # Queue jobs
+  Mail/             # Mail classes
+  Notifications/    # Notifications
+  Providers/        # Service providers
+  Rules/            # Validation rules
+config/             # Configuration files
+database/           # Database
+  factories/        # Model factories
+  migrations/       # Database migrations
+  seeders/          # Database seeders
+resources/          # Static assets
+  views/            # Blade templates
+  js/               # JavaScript files
+  css/              # CSS files
+  lang/             # Language files
+routes/             # Route definitions
+  web.php           # Web routes
+  api.php           # API routes
+  channels.php      # Broadcast channels
+tests/              # Test suite
+  Feature/          # Feature tests
+  Unit/             # Unit tests
+
+// Development Guidelines
+1. Code Structure:
+   - MVC pattern
+   - Service layer
+   - Repository pattern
+   - Event-driven
+   - Clean code
+   - SOLID principles
+
+2. API Design:
+   - RESTful principles
+   - API resources
+   - Validation
+   - Authentication
+   - Rate limiting
+   - Documentation
+
+3. Performance:
+   - Caching
+   - Queue jobs
+   - Database indexing
+   - Query optimization
+   - Eager loading
+   - N+1 prevention
+
+// Dependencies
+Core:
+- php: "^8.2"
+- laravel/framework: "^10.0"
+- laravel/sanctum: "^3.2"
+- laravel/tinker: "^2.8"
+
+Optional:
+- laravel/horizon: "^5.15"
+- laravel/telescope: "^4.14"
+- spatie/laravel-permission: "^5.10"
+- barryvdh/laravel-ide-helper: "^2.13"
+
+// Code Examples:
+
+1. Controller Pattern:
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Resources\UserResource;
+use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class UserController extends Controller
+{
+    public function __construct(
+        private readonly UserService $userService
+    ) {}
+
+    public function index(): AnonymousResourceCollection
+    {
+        $users = $this->userService->getAllUsers();
+        return UserResource::collection($users);
+    }
+
+    public function show(int $id): UserResource
+    {
+        $user = $this->userService->getUserById($id);
+        return new UserResource($user);
+    }
+
+    public function store(StoreUserRequest $request): UserResource
+    {
+        $user = $this->userService->createUser($request->validated());
+        return new UserResource($user);
+    }
+
+    public function update(StoreUserRequest $request, int $id): UserResource
+    {
+        $user = $this->userService->updateUser($id, $request->validated());
+        return new UserResource($user);
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $this->userService->deleteUser($id);
+        return response()->json(null, 204);
+    }
+}
+```
+
+2. Service Pattern:
+```php
+<?php
+
+namespace App\Services;
+
+use App\Models\User;
+use App\Repositories\UserRepository;
+use App\Events\UserCreated;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Hash;
+
+class UserService
+{
+    public function __construct(
+        private readonly UserRepository $userRepository
+    ) {}
+
+    public function getAllUsers(): Collection
+    {
+        return $this->userRepository->all();
+    }
+
+    public function getUserById(int $id): User
+    {
+        return $this->userRepository->findOrFail($id);
+    }
+
+    public function createUser(array $data): User
+    {
+        $data['password'] = Hash::make($data['password']);
+        
+        $user = $this->userRepository->create($data);
+        
+        event(new UserCreated($user));
+        
+        return $user;
+    }
+
+    public function updateUser(int $id, array $data): User
+    {
+        $user = $this->userRepository->findOrFail($id);
+        
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+        
+        $this->userRepository->update($user, $data);
+        
+        return $user->fresh();
+    }
+
+    public function deleteUser(int $id): void
+    {
+        $user = $this->userRepository->findOrFail($id);
+        $this->userRepository->delete($user);
+    }
+}
+```
+
+3. Repository Pattern:
+```php
+<?php
+
+namespace App\Repositories;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+class UserRepository
+{
+    public function all(): Collection
+    {
+        return User::all();
+    }
+
+    public function findOrFail(int $id): User
+    {
+        return User::findOrFail($id);
+    }
+
+    public function create(array $data): User
+    {
+        return User::create($data);
+    }
+
+    public function update(User $user, array $data): bool
+    {
+        return $user->update($data);
+    }
+
+    public function delete(User $user): bool
+    {
+        return $user->delete();
+    }
+
+    public function findByEmail(string $email): ?User
+    {
+        return User::where('email', $email)->first();
+    }
+
+    public function paginate(int $perPage = 15): Collection
+    {
+        return User::paginate($perPage);
+    }
+}
+```
+
+4. Model Pattern:
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class);
+    }
+}
+```
+
+5. Request Pattern:
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
+
+class StoreUserRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        $rules = [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', Password::defaults()],
+        ];
+
+        if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
+            $rules['email'] = ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $this->user->id];
+            $rules['password'] = ['nullable', Password::defaults()];
+        }
+
+        return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'The name field is required.',
+            'email.required' => 'The email field is required.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.unique' => 'This email is already taken.',
+            'password.required' => 'The password field is required.',
+        ];
+    }
+}
+```
+
+// Best Practices:
+1. Code Quality:
+   - PSR standards
+   - Type hinting
+   - Documentation
+   - Testing
+   - Code reviews
+   - Refactoring
+
+2. Architecture:
+   - MVC pattern
+   - Service layer
+   - Repository pattern
+   - Event-driven
+   - Queue jobs
+   - Caching
+
+3. Performance:
+   - Query optimization
+   - Eager loading
+   - Caching
+   - Queue jobs
+   - Database indexing
+   - N+1 prevention
+
+4. Security:
+   - Authentication
+   - Authorization
+   - Input validation
+   - CSRF protection
+   - XSS prevention
+   - SQL injection
+
+// Security Considerations:
+1. API Security:
+   - Sanctum tokens
+   - Rate limiting
+   - Input validation
+   - Error handling
+   - Logging
+   - Monitoring
+
+2. Data Security:
+   - Encryption
+   - Password hashing
+   - Access control
+   - Audit logging
+   - Data validation
+   - Backups
+
+3. Infrastructure:
+   - HTTPS
+   - Firewalls
+   - Load balancers
+   - Monitoring
+   - Logging
+   - Backups 

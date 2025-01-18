@@ -1,1 +1,240 @@
-You are an expert in **Python, FastAPI, scalable API development, TypeScript, React, Tailwind,** and **Shadcn UI**.### Key Principles- Write concise, technical responses with accurate examples in both Python and TypeScript.- Use **functional and declarative programming patterns**; avoid classes unless absolutely necessary.- Prefer **iteration and modularization** over code duplication.- Use descriptive variable names with auxiliary verbs (e.g., `is_active`, `has_permission`, `isLoading`, `hasError`).- Follow proper **naming conventions**:  - For Python: use lowercase with underscores (e.g., `routers/user_routes.py`). - For TypeScript: use lowercase with dashes for directories (e.g., `components/auth-wizard`).### Project Structure- **Frontend**: - **Language**: TypeScript - **Framework**: React - **UI Library**: Tailwind CSS, Shadcn UI - **Build Tool**: Vite - **Directory Structure**:  - `frontend/src/`: Main source code  - `frontend/src/index.html`: Main HTML file  - Configuration Files:   - `vite.config.ts`   - `tsconfig.json`   - `tailwind.config.js`   - `postcss.config.js`  - **Docker Files**:   - `Dockerfile`   - `Dockerfile.dev`- **Backend**: - **Language**: Python - **Framework**: FastAPI - **Database**: PostgreSQL - **Directory Structure**:  - `backend/src/`: Main source code  - `backend/tests/`: Tests  - `document-processor/`: Document processing utilities  - Environment Configuration:   - `.env` / `.env.example`: Environment variables  - Database Configuration:   - `alembic.ini`   - `ddialog.db`: SQLite database for local development  - **Docker Files**:   - `Dockerfile`   - `Dockerfile.dev`### Code Style and Structure**Backend (Python/FastAPI)**:- Use `def` for pure functions and `async def` for asynchronous operations.- **Type Hints**: Use Python type hints for all function signatures. Prefer Pydantic models for input validation.- **File Structure**: Follow clear separation with directories for routes, utilities, static content, and models/schemas.- **RORO Pattern**: Use the "Receive an Object, Return an Object" pattern.- **Error Handling**: - Handle errors at the beginning of functions with early returns. - Use guard clauses and avoid deeply nested if statements. - Implement proper logging and custom error types.**Frontend (TypeScript/React)**:- **TypeScript Usage**: Use TypeScript for all code. Prefer interfaces over types. Avoid enums; use maps instead.- **Functional Components**: Write all components as functional components with proper TypeScript interfaces.- **UI and Styling**: Implement responsive design using Tailwind CSS with Shadcn UI, adopting a mobile-first approach.- **Performance**: - Minimize `use client`, `useEffect`, and `setState` hooks. Favor server-side rendering where possible. - Wrap client components in `Suspense` with fallback for improved performance.### Performance Optimization**Backend**:- **Asynchronous Operations**: Minimize blocking I/O operations using async functions.- **Caching**: Implement caching strategies for frequently accessed data using Redis or in-memory stores.- **Lazy Loading**: Use lazy loading techniques for large datasets and API responses.**Frontend**:- **React Components**: Favor server-side rendering and avoid heavy client-side rendering where possible.- **Dynamic Loading**: Implement dynamic loading for non-critical components and optimize image loading using WebP format with lazy loading.### Project Conventions**Backend**:1. Follow **RESTful API design principles**.2. Rely on **FastAPI’s dependency injection system** for managing state and shared resources.3. Use **SQLAlchemy 2.0** for ORM features, if applicable.4. Ensure **CORS** is properly configured for local development.5. No authentication or authorization is required for users to access the platform.**Frontend**:1. Optimize **Web Vitals** (LCP, CLS, FID).2. Limit `use client` hooks to small, specific components for Web API access.3. Use **Docker** for containerization and ensure easy deployment.### Testing and Deployment- Implement **unit tests** for both frontend and backend.- Use **Docker** and **docker compose** for orchestration in both development and production environments. Avoid using the obsolete `docker-compose` command.- Ensure proper input validation, sanitization, and error handling throughout the application.
+// FastAPI Scalable API Architecture Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A highly scalable FastAPI application designed for large-scale deployments:
+- Microservices-ready architecture
+- High-performance API endpoints
+- Distributed system patterns
+- Horizontal scaling capabilities
+- Load balancing ready
+- Service mesh integration
+- Monitoring and observability
+- Containerization support
+
+// Project Structure
+src/
+  api/
+    v1/
+      routers/       # API route modules
+      schemas/       # Request/Response models
+      dependencies/  # Endpoint dependencies
+  core/
+    config/          # Environment and app config
+    events/          # Event handlers and buses
+    middleware/      # Custom middleware
+    monitoring/      # Metrics and tracing
+  infrastructure/
+    database/        # Database modules
+      migrations/    # Alembic migrations
+      models/        # SQLAlchemy models
+    cache/           # Caching layer
+    queue/           # Message queues
+    storage/         # File storage
+  services/          # Business logic services
+    auth/            # Authentication service
+    notification/    # Notification service
+    background/      # Background tasks
+  tests/
+    integration/     # Integration tests
+    load/            # Load tests
+    unit/            # Unit tests
+  utils/             # Shared utilities
+  main.py            # Application entry
+
+// Development Guidelines
+1. Scalability Patterns:
+   - Use asynchronous programming everywhere
+   - Implement proper connection pooling
+   - Design for statelessness
+   - Use distributed caching
+   - Implement circuit breakers
+   - Use message queues for async tasks
+
+2. Performance Optimization:
+   - Implement response compression
+   - Use efficient serialization
+   - Optimize database queries
+   - Implement proper indexing
+   - Use bulk operations
+   - Cache frequently accessed data
+
+3. Monitoring and Observability:
+   - Implement structured logging
+   - Use distributed tracing
+   - Monitor key metrics
+   - Set up health checks
+   - Track performance metrics
+   - Implement proper alerting
+
+4. Database Scaling:
+   - Use database sharding
+   - Implement read replicas
+   - Use connection pooling
+   - Optimize query patterns
+   - Implement proper indexes
+   - Use database partitioning
+
+// Dependencies
+Core:
+- fastapi>=0.100.0
+- uvicorn[standard]>=0.23.0
+- sqlalchemy[asyncio]>=2.0.0
+- alembic>=1.11.0
+- asyncpg>=0.28.0
+- redis>=5.0.0
+- prometheus-client>=0.17.0
+- opentelemetry-api>=1.20.0
+
+Optional:
+- celery>=5.3.0
+- kafka-python>=2.0.0
+- elasticsearch>=8.0.0
+- memcached>=1.59
+- sentry-sdk>=1.30.0
+- newrelic>=8.8.0
+
+// Code Examples:
+
+1. Circuit Breaker Pattern:
+```python
+from fastapi import FastAPI, HTTPException
+from functools import wraps
+import asyncio
+import time
+
+class CircuitBreaker:
+    def __init__(self, failure_threshold=5, reset_timeout=60):
+        self.failure_count = 0
+        self.failure_threshold = failure_threshold
+        self.reset_timeout = reset_timeout
+        self.last_failure_time = None
+        self.state = "closed"  # closed, open, half-open
+
+    async def __call__(self, func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            if self.state == "open":
+                if time.time() - self.last_failure_time > self.reset_timeout:
+                    self.state = "half-open"
+                else:
+                    raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+
+            try:
+                result = await func(*args, **kwargs)
+                if self.state == "half-open":
+                    self.state = "closed"
+                    self.failure_count = 0
+                return result
+            except Exception as e:
+                self.failure_count += 1
+                self.last_failure_time = time.time()
+                if self.failure_count >= self.failure_threshold:
+                    self.state = "open"
+                raise e
+
+        return wrapper
+
+# Usage
+@app.get("/api/users/{user_id}")
+@circuit_breaker(failure_threshold=5, reset_timeout=60)
+async def get_user(user_id: int):
+    return await user_service.get_user(user_id)
+```
+
+2. Caching Layer Pattern:
+```python
+from fastapi import FastAPI, Depends
+from redis import asyncio as aioredis
+import json
+
+class CacheLayer:
+    def __init__(self, redis_url: str):
+        self.redis = aioredis.from_url(redis_url)
+
+    async def get_or_set(self, key: str, func, expire: int = 3600):
+        # Try to get from cache
+        cached = await self.redis.get(key)
+        if cached:
+            return json.loads(cached)
+
+        # If not in cache, execute function and cache result
+        result = await func()
+        await self.redis.setex(
+            key,
+            expire,
+            json.dumps(result, default=str)
+        )
+        return result
+
+# Usage
+cache = CacheLayer("redis://localhost")
+
+@app.get("/api/products")
+async def get_products(category: str):
+    async def fetch_products():
+        return await db.products.filter(category=category)
+
+    return await cache.get_or_set(
+        f"products:{category}",
+        fetch_products,
+        expire=3600
+    )
+```
+
+3. Load Balancing Pattern:
+```python
+from fastapi import FastAPI, Request
+from typing import List
+import random
+
+class LoadBalancer:
+    def __init__(self, backends: List[str]):
+        self.backends = backends
+        self.current = 0
+
+    def get_backend(self, strategy: str = "round_robin"):
+        if strategy == "random":
+            return random.choice(self.backends)
+        elif strategy == "round_robin":
+            backend = self.backends[self.current]
+            self.current = (self.current + 1) % len(self.backends)
+            return backend
+
+app = FastAPI()
+lb = LoadBalancer([
+    "http://backend1:8000",
+    "http://backend2:8000",
+    "http://backend3:8000"
+])
+
+@app.middleware("http")
+async def load_balancing_middleware(request: Request, call_next):
+    backend = lb.get_backend()
+    # Forward request to backend
+    # Implementation details omitted for brevity
+```
+
+// Best Practices:
+1. Design for horizontal scaling
+2. Implement proper caching strategies
+3. Use asynchronous operations
+4. Implement circuit breakers
+5. Use proper load balancing
+6. Implement proper monitoring
+7. Use message queues for async tasks
+8. Implement proper error handling
+9. Use proper database scaling
+10. Implement proper security
+
+// Security Considerations:
+1. Implement rate limiting
+2. Use proper authentication
+3. Implement proper authorization
+4. Use secure communications
+5. Implement proper logging
+6. Use proper input validation
+7. Implement proper error handling
+8. Use proper session management
+9. Implement proper monitoring
+10. Use proper security headers

@@ -1,0 +1,329 @@
+// Kotlin Spring Boot Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Kotlin Spring Boot application:
+- RESTful APIs
+- GraphQL APIs
+- WebSocket servers
+- Microservices
+- Authentication
+- Database integration
+- Message queues
+- Background jobs
+
+// Project Structure
+src/
+  main/
+    kotlin/com/example/project/      # Package structure
+      Application.kt                 # Main application class
+      config/                        # Configuration
+        SecurityConfig.kt            # Security configuration
+        WebConfig.kt                 # Web configuration
+      controller/                    # REST controllers
+        UserController.kt            # User controller
+        ProductController.kt         # Product controller
+      model/                         # Domain models
+        User.kt                      # User model
+        Product.kt                   # Product model
+      repository/                    # Data access
+        UserRepository.kt            # User repository
+        ProductRepository.kt         # Product repository
+      service/                       # Business logic
+        UserService.kt               # User service
+        ProductService.kt            # Product service
+      exception/                     # Custom exceptions
+        ResourceNotFoundException.kt # Resource not found exception
+        ValidationException.kt       # Validation exception
+      util/                          # Utilities
+        Extensions.kt                # Extension functions
+        Constants.kt                 # Constants
+    resources/                       # Resources
+      application.yml                # Application properties
+      db/migration/                  # Flyway migrations
+      static/                        # Static resources
+      templates/                     # Thymeleaf templates
+  test/                              # Test suite
+    kotlin/com/example/project/      # Test classes
+      controller/                    # Controller tests
+      service/                       # Service tests
+      repository/                    # Repository tests
+
+// Development Guidelines
+1. Code Structure:
+   - Clean architecture
+   - Dependency injection
+   - Service layer
+   - Repository pattern
+   - Exception handling
+   - Logging
+
+2. API Design:
+   - RESTful principles
+   - Versioning
+   - Documentation
+   - Validation
+   - Error handling
+   - Security
+
+3. Performance:
+   - Caching
+   - Connection pooling
+   - Query optimization
+   - Coroutines
+   - Monitoring
+   - Profiling
+
+// Dependencies
+Core:
+- kotlin: "1.8.20"
+- spring-boot-starter-web: "3.1.0"
+- spring-boot-starter-data-jpa: "3.1.0"
+- spring-boot-starter-security: "3.1.0"
+
+Optional:
+- spring-boot-starter-actuator: "3.1.0"
+- spring-boot-starter-cache: "3.1.0"
+- spring-boot-starter-test: "3.1.0"
+- springdoc-openapi-starter-webmvc-ui: "2.1.0"
+
+// Code Examples:
+
+1. Controller Pattern:
+```kotlin
+package com.example.project.controller
+
+import com.example.project.model.User
+import com.example.project.service.UserService
+import com.example.project.dto.UserDTO
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
+import jakarta.validation.Valid
+
+@RestController
+@RequestMapping("/api/v1/users")
+class UserController(
+    private val userService: UserService
+) {
+    @GetMapping("/{id}")
+    suspend fun getUser(@PathVariable id: Long): ResponseEntity<UserDTO> =
+        ResponseEntity.ok(userService.findById(id))
+
+    @PostMapping
+    suspend fun createUser(@Valid @RequestBody userDTO: UserDTO): ResponseEntity<UserDTO> =
+        ResponseEntity.ok(userService.create(userDTO))
+
+    @PutMapping("/{id}")
+    suspend fun updateUser(
+        @PathVariable id: Long,
+        @Valid @RequestBody userDTO: UserDTO
+    ): ResponseEntity<UserDTO> =
+        ResponseEntity.ok(userService.update(id, userDTO))
+
+    @DeleteMapping("/{id}")
+    suspend fun deleteUser(@PathVariable id: Long): ResponseEntity<Unit> =
+        userService.delete(id).let { ResponseEntity.noContent().build() }
+}
+```
+
+2. Service Pattern:
+```kotlin
+package com.example.project.service
+
+import com.example.project.model.User
+import com.example.project.repository.UserRepository
+import com.example.project.dto.UserDTO
+import com.example.project.exception.ResourceNotFoundException
+import com.example.project.mapper.UserMapper
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+class UserService(
+    private val userRepository: UserRepository,
+    private val userMapper: UserMapper
+) {
+    @Transactional(readOnly = true)
+    suspend fun findById(id: Long): UserDTO =
+        userRepository.findById(id)
+            ?.let(userMapper::toDTO)
+            ?: throw ResourceNotFoundException("User not found")
+
+    @Transactional
+    suspend fun create(userDTO: UserDTO): UserDTO =
+        userMapper.toEntity(userDTO)
+            .let(userRepository::save)
+            .let(userMapper::toDTO)
+
+    @Transactional
+    suspend fun update(id: Long, userDTO: UserDTO): UserDTO =
+        userRepository.findById(id)
+            ?.also { user -> userMapper.updateEntity(userDTO, user) }
+            ?.let(userRepository::save)
+            ?.let(userMapper::toDTO)
+            ?: throw ResourceNotFoundException("User not found")
+
+    @Transactional
+    suspend fun delete(id: Long) {
+        if (!userRepository.existsById(id)) {
+            throw ResourceNotFoundException("User not found")
+        }
+        userRepository.deleteById(id)
+    }
+}
+```
+
+3. Repository Pattern:
+```kotlin
+package com.example.project.repository
+
+import com.example.project.model.User
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.stereotype.Repository
+
+@Repository
+interface UserRepository : JpaRepository<User, Long> {
+    suspend fun findByEmail(email: String): User?
+    
+    suspend fun existsByEmail(email: String): Boolean
+    
+    @Query("SELECT u FROM User u WHERE u.active = true")
+    suspend fun findAllActiveUsers(): List<User>
+    
+    @Query(
+        value = """
+            SELECT u.* FROM users u
+            LEFT JOIN user_roles ur ON u.id = ur.user_id
+            WHERE ur.role_id = :roleId
+        """,
+        nativeQuery = true
+    )
+    suspend fun findByRoleId(roleId: Long): List<User>
+}
+```
+
+4. Model Pattern:
+```kotlin
+package com.example.project.model
+
+import jakarta.persistence.*
+import java.time.LocalDateTime
+
+@Entity
+@Table(name = "users")
+data class User(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
+
+    @Column(nullable = false)
+    var name: String,
+
+    @Column(nullable = false, unique = true)
+    var email: String,
+
+    @Column(nullable = false)
+    var password: String,
+
+    @Column(name = "created_at")
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "updated_at")
+    var updatedAt: LocalDateTime = LocalDateTime.now()
+) {
+    @PreUpdate
+    protected fun onUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
+}
+```
+
+5. Configuration Pattern:
+```kotlin
+package com.example.project.config
+
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.web.SecurityFilterChain
+
+@Configuration
+@EnableWebSecurity
+class SecurityConfig {
+    @Bean
+    fun filterChain(http: HttpSecurity): SecurityFilterChain =
+        http
+            .csrf { it.disable() }
+            .authorizeHttpRequests { auth ->
+                auth
+                    .requestMatchers("/api/v1/auth/**").permitAll()
+                    .requestMatchers("/api/v1/public/**").permitAll()
+                    .anyRequest().authenticated()
+            }
+            .sessionManagement { session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            }
+            .build()
+}
+```
+
+// Best Practices:
+1. Code Quality:
+   - Clean code
+   - SOLID principles
+   - Design patterns
+   - Documentation
+   - Testing
+   - Code reviews
+
+2. Architecture:
+   - Layered architecture
+   - Microservices
+   - API Gateway
+   - Service discovery
+   - Load balancing
+   - Circuit breakers
+
+3. Performance:
+   - Coroutines
+   - Connection pools
+   - Query optimization
+   - Caching
+   - Monitoring
+   - Profiling
+
+4. Security:
+   - Authentication
+   - Authorization
+   - Input validation
+   - CSRF protection
+   - XSS prevention
+   - SQL injection
+
+// Security Considerations:
+1. API Security:
+   - JWT tokens
+   - OAuth 2.0
+   - Rate limiting
+   - Input validation
+   - Error handling
+   - Logging
+
+2. Data Security:
+   - Encryption
+   - Password hashing
+   - Access control
+   - Audit logging
+   - Data validation
+   - Backups
+
+3. Infrastructure:
+   - HTTPS
+   - Firewalls
+   - Load balancers
+   - Monitoring
+   - Logging
+   - Backups 

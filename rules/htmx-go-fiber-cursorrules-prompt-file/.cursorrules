@@ -1,37 +1,317 @@
-// HTMX with Go and Fiber .cursorrules
+// HTMX with Go Fiber Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-// HTMX, Go, and Fiber best practices
-const htmxGoFiberBestPractices = [
-  "Use Fiber's HTML rendering for server-side templates",
-  "Implement Fiber's routing system for HTMX requests",
-  "Utilize Fiber's middleware for request processing",
-  "Use Fiber's JSON methods for API responses",
-  "Implement proper error handling with Fiber's error handling",
-  "Utilize Fiber's static file serving for assets",
-];
+// What you can build with this ruleset:
+Modern Go web applications with HTMX and Fiber integration featuring:
+- High-performance server-side rendering
+- Dynamic UI updates without JavaScript
+- Fast HTTP routing with Fiber
+- Real-time interactions
+- RESTful endpoints
+- WebSocket support
+- Modal dialogs
+- Live search
 
-// Folder structure
-const folderStructure = `
+// Project Structure
 cmd/
-  main.go
-internal/
-  handlers/
-  models/
-  templates/
-static/
-  css/
-  js/
-go.mod
-go.sum
-`;
+  server/          # Application entrypoint
+    main.go        # Server initialization
+internal/          # Private application code
+  handlers/        # HTTP handlers
+    items.go       # Item handlers
+    users.go       # User handlers
+    templates.go   # Template helpers
+  models/          # Data models
+    item.go        # Item model
+    user.go        # User model
+  middleware/      # Fiber middleware
+    auth.go        # Authentication
+    logging.go     # Request logging
+    csrf.go        # CSRF protection
+  templates/       # HTML templates
+    layouts/       # Template layouts
+      main.html    # Main layout
+    views/         # View templates
+      index.html   # Home page
+      about.html   # About page
+    partials/      # Partial templates
+      form.html    # Form partial
+      modal.html   # Modal partial
+static/            # Static assets
+  css/             # Stylesheets
+    main.css       # Main styles
+  js/              # JavaScript
+    htmx.min.js    # HTMX library
+go.mod             # Module definition
+go.sum             # Module checksums
 
-// Additional instructions
-const additionalInstructions = `
-1. Use Fiber's App.Get/Post/etc for routing HTMX requests
-2. Implement CSRF protection with Fiber middleware
-3. Utilize Fiber's Context for handling HTMX-specific headers
-4. Use Fiber's template engine for server-side rendering
-5. Implement proper logging with Fiber's Logger middleware
-6. Follow Fiber's best practices for project structure
-7. Use environment variables for configuration
-`;
+// Development Guidelines
+1. Fiber Integration:
+   - Use fiber.Handler interface
+   - Implement Fiber middleware
+   - Follow idiomatic Go
+   - Use html/template or Fiber Views
+   - Handle errors properly
+   - Follow Fiber conventions
+
+2. HTMX Patterns:
+   - Return partial HTML
+   - Handle form submissions
+   - Implement validation
+   - Show loading states
+   - Use proper targeting
+   - Follow REST principles
+
+3. Performance Patterns:
+   - Use Fiber's FastHTTP
+   - Implement caching
+   - Handle timeouts
+   - Optimize templates
+   - Use connection pools
+   - Monitor resources
+
+// Dependencies
+Core:
+- go: ">=1.22"
+- fiber: "^2.52.0"
+- htmx: "^1.9.0"
+- sqlx: "^1.3.0"
+
+Optional:
+- fiber/csrf: "^2.52.0"
+- zap: "^1.24.0"
+- validator: "^10.0.0"
+- pgx: "^5.0.0"
+
+// Code Examples:
+
+1. Fiber Handler Pattern:
+```go
+package handlers
+
+import (
+    "github.com/gofiber/fiber/v2"
+    "github.com/jmoiron/sqlx"
+)
+
+type ItemHandler struct {
+    db *sqlx.DB
+}
+
+func NewItemHandler(db *sqlx.DB) *ItemHandler {
+    return &ItemHandler{
+        db: db,
+    }
+}
+
+func (h *ItemHandler) List(c *fiber.Ctx) error {
+    // Parse pagination params
+    page := c.QueryInt("page", 1)
+    if page < 1 {
+        page = 1
+    }
+    
+    // Fetch items
+    var items []struct {
+        ID          int64  `db:"id"`
+        Title       string `db:"title"`
+        Description string `db:"description"`
+    }
+    err := h.db.SelectContext(c.Context(), &items, `
+        SELECT id, title, description 
+        FROM items 
+        ORDER BY created_at DESC 
+        LIMIT 10 OFFSET $1
+    `, (page-1)*10)
+    if err != nil {
+        return c.Status(500).SendString("Failed to fetch items")
+    }
+    
+    // Check if HTMX request
+    if c.Get("HX-Request") == "true" {
+        return c.Render("partials/item_list", fiber.Map{
+            "Items": items,
+        })
+    }
+    
+    // Regular request - full page
+    return c.Render("views/items", fiber.Map{
+        "Items": items,
+    })
+}
+
+func (h *ItemHandler) Create(c *fiber.Ctx) error {
+    // Parse form
+    title := c.FormValue("title")
+    description := c.FormValue("description")
+    if title == "" || description == "" {
+        return c.Status(400).SendString("Missing required fields")
+    }
+    
+    // Create item
+    var id int64
+    err := h.db.QueryRowContext(c.Context(), `
+        INSERT INTO items (title, description)
+        VALUES ($1, $2)
+        RETURNING id
+    `, title, description).Scan(&id)
+    if err != nil {
+        return c.Status(500).SendString("Failed to create item")
+    }
+    
+    // Fetch new item
+    item := struct {
+        ID          int64  `db:"id"`
+        Title       string `db:"title"`
+        Description string `db:"description"`
+    }{}
+    err = h.db.GetContext(c.Context(), &item, `
+        SELECT id, title, description
+        FROM items WHERE id = $1
+    `, id)
+    if err != nil {
+        return c.Status(500).SendString("Failed to fetch item")
+    }
+    
+    // Return new item HTML
+    return c.Render("partials/item", fiber.Map{
+        "Item": item,
+    })
+}
+```
+
+2. Template Pattern:
+```html
+{{/* layouts/main.html */}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Title}}</title>
+    <script src="/static/js/htmx.min.js"></script>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    {{embed}}
+</body>
+</html>
+
+{{/* partials/item_list.html */}}
+<div id="items-container"
+     hx-get="/items"
+     hx-trigger="revealed"
+     hx-swap="beforeend"
+     hx-indicator=".loading">
+    
+    {{range .Items}}
+    <div class="item">
+        <h3>{{.Title}}</h3>
+        <p>{{.Description}}</p>
+        
+        <button hx-delete="/items/{{.ID}}"
+                hx-target="closest .item"
+                hx-confirm="Are you sure?">
+            Delete
+        </button>
+    </div>
+    {{end}}
+    
+    <div class="loading htmx-indicator">
+        Loading more items...
+    </div>
+</div>
+
+{{/* partials/item_form.html */}}
+<form hx-post="/items"
+      hx-target="#items-container"
+      hx-swap="afterbegin">
+    {{.CSRFInput}}
+    
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" 
+               name="title" 
+               id="title" 
+               required>
+        <div class="error-message" id="title-error"></div>
+    </div>
+    
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea name="description" 
+                  id="description" 
+                  required></textarea>
+        <div class="error-message" id="description-error"></div>
+    </div>
+    
+    <button type="submit">Add Item</button>
+</form>
+```
+
+3. Router Pattern:
+```go
+package main
+
+import (
+    "github.com/gofiber/fiber/v2"
+    "github.com/gofiber/fiber/v2/middleware/logger"
+    "github.com/gofiber/fiber/v2/middleware/recover"
+    "github.com/gofiber/template/html/v2"
+)
+
+func setupRouter(h *handlers.ItemHandler) *fiber.App {
+    // Initialize template engine
+    engine := html.New("./templates", ".html")
+    
+    // Create Fiber app
+    app := fiber.New(fiber.Config{
+        Views: engine,
+        ViewsLayout: "layouts/main",
+    })
+    
+    // Middleware
+    app.Use(logger.New())
+    app.Use(recover.New())
+    
+    // Routes
+    app.Get("/", h.List)
+    app.Route("/items", func(router fiber.Router) {
+        router.Get("/", h.List)
+        router.Post("/", h.Create)
+        router.Route("/:id", func(router fiber.Router) {
+            router.Get("/", h.Get)
+            router.Put("/", h.Update)
+            router.Delete("/", h.Delete)
+        })
+    })
+    
+    // Static files
+    app.Static("/static", "./static")
+    
+    return app
+}
+```
+
+// Best Practices:
+1. Follow Fiber idioms
+2. Use proper interfaces
+3. Handle errors gracefully
+4. Implement middleware
+5. Optimize performance
+6. Use prepared statements
+7. Validate inputs
+8. Write unit tests
+9. Document code
+10. Follow naming conventions
+
+// Security Considerations:
+1. Enable CSRF protection
+2. Validate all inputs
+3. Sanitize HTML output
+4. Use proper headers
+5. Handle file uploads safely
+6. Implement rate limiting
+7. Use HTTPS
+8. Secure cookies
+9. Audit dependencies
+10. Log security events

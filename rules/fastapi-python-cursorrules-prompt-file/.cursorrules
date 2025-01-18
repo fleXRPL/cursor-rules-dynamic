@@ -1,0 +1,263 @@
+// FastAPI Python Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Python web API using FastAPI:
+- RESTful APIs
+- GraphQL APIs
+- WebSocket endpoints
+- Background tasks
+- File operations
+- Database integration
+- Authentication
+- Documentation
+
+// Project Structure
+src/
+  api/              # API endpoints
+    v1/             # API version 1
+      endpoints/    # Route handlers
+      schemas/      # Pydantic models
+      deps/         # Dependencies
+    middleware/     # Custom middleware
+  core/             # Core modules
+    config.py       # Configuration
+    security.py     # Security utils
+    logging.py      # Logging setup
+  db/               # Database
+    models/         # SQLAlchemy models
+    migrations/     # Alembic migrations
+    session.py      # DB session
+  services/         # Business logic
+    auth.py         # Auth service
+    email.py        # Email service
+    storage.py      # Storage service
+  utils/            # Utilities
+    validators.py   # Custom validators
+    helpers.py      # Helper functions
+  main.py           # Application entry
+tests/              # Test suite
+  api/              # API tests
+  services/         # Service tests
+  conftest.py       # Test fixtures
+
+// Development Guidelines
+1. API Design:
+   - Type hints
+   - Pydantic models
+   - Path operations
+   - Query params
+   - Request body
+   - Response models
+
+2. Code Structure:
+   - Dependency injection
+   - Service layer
+   - Repository pattern
+   - Error handling
+   - Validation
+   - Logging
+
+3. Performance:
+   - Async operations
+   - Database queries
+   - Caching
+   - Background tasks
+   - Resource cleanup
+   - Monitoring
+
+// Dependencies
+Core:
+- fastapi: "^0.100.0"
+- uvicorn: "^0.22.0"
+- pydantic: "^2.0.0"
+- sqlalchemy: "^2.0.0"
+
+Optional:
+- alembic: "^1.11.0"
+- python-jose: "^3.3.0"
+- passlib: "^1.7.4"
+- python-multipart: "^0.0.6"
+
+// Code Examples:
+
+1. Router Pattern:
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_db
+from app.schemas.user import UserCreate, UserResponse
+from app.services.user import UserService
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_in: UserCreate,
+    db: AsyncSession = Depends(get_db),
+    user_service: UserService = Depends()
+):
+    try:
+        user = await user_service.create(db, user_in)
+        return user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    user_service: UserService = Depends()
+):
+    user = await user_service.get(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return user
+```
+
+2. Service Pattern:
+```python
+from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from app.db.models.user import User
+from app.schemas.user import UserCreate
+from app.core.security import get_password_hash
+
+class UserService:
+    async def create(
+        self,
+        db: AsyncSession,
+        user_in: UserCreate
+    ) -> User:
+        # Check if user exists
+        result = await db.execute(
+            select(User).where(User.email == user_in.email)
+        )
+        if result.scalar_one_or_none():
+            raise ValueError("Email already registered")
+        
+        # Create new user
+        user = User(
+            email=user_in.email,
+            hashed_password=get_password_hash(user_in.password),
+            full_name=user_in.full_name
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        return user
+
+    async def get(
+        self,
+        db: AsyncSession,
+        user_id: int
+    ) -> Optional[User]:
+        result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def authenticate(
+        self,
+        db: AsyncSession,
+        email: str,
+        password: str
+    ) -> Optional[User]:
+        user = await self.get_by_email(db, email)
+        if not user or not verify_password(password, user.hashed_password):
+            return None
+        return user
+```
+
+3. Schema Pattern:
+```python
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
+
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: str = Field(..., min_length=1, max_length=100)
+    is_active: bool = True
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+
+class UserUpdate(UserBase):
+    password: Optional[str] = Field(None, min_length=8)
+
+class UserResponse(UserBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+```
+
+// Best Practices:
+1. Code Quality:
+   - Type hints
+   - Documentation
+   - Error handling
+   - Input validation
+   - Testing
+   - Logging
+
+2. Architecture:
+   - Layered design
+   - Dependency injection
+   - Repository pattern
+   - Service pattern
+   - Event handling
+   - Error handling
+
+3. Performance:
+   - Query optimization
+   - Caching strategy
+   - Connection pooling
+   - Memory management
+   - Response time
+   - Monitoring
+
+4. Security:
+   - Authentication
+   - Authorization
+   - Input validation
+   - Rate limiting
+   - Headers security
+   - CORS policy
+
+// Security Considerations:
+1. API Security:
+   - Input validation
+   - Rate limiting
+   - Authentication
+   - Authorization
+   - CORS policy
+   - Security headers
+
+2. Data Security:
+   - Encryption
+   - Password hashing
+   - Data validation
+   - SQL injection
+   - XSS prevention
+   - CSRF protection
+
+3. Infrastructure:
+   - HTTPS
+   - Firewalls
+   - Monitoring
+   - Logging
+   - Backups
+   - Updates 

@@ -1,32 +1,193 @@
-// HTMX Basic Setup .cursorrules
+// HTMX Basic Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-// HTMX best practices
-const htmxBestPractices = [
-  "Use hx-get for GET requests",
-  "Implement hx-post for POST requests",
-  "Utilize hx-trigger for custom events",
-  "Use hx-swap to control how content is swapped",
-  "Implement hx-target to specify where to swap content",
-  "Utilize hx-indicator for loading indicators",
-];
+// What you can build with this ruleset:
+Modern, hypermedia-driven web applications featuring:
+- Server-side rendered HTML
+- Dynamic UI updates without JavaScript
+- Progressive enhancement
+- Real-time interactions
+- Form validation and submission
+- Infinite scrolling
+- Modal dialogs
+- Live search
 
-// Folder structure
-const folderStructure = `
+// Project Structure
 src/
-  templates/
-  static/
-    css/
-    js/
-  app.py
-`;
+  templates/       # HTML templates
+    base.html      # Base template
+    components/    # Reusable components
+      form.html    # Form component
+      modal.html   # Modal component
+    pages/         # Page templates
+      index.html   # Home page
+      about.html   # About page
+  static/          # Static assets
+    css/           # Stylesheets
+      main.css     # Main styles
+      components/  # Component styles
+    js/            # JavaScript
+      htmx.min.js  # HTMX library
+  app.py           # Main application
 
-// Additional instructions
-const additionalInstructions = `
-1. Use semantic HTML5 elements
-2. Implement proper CSRF protection
-3. Utilize HTMX extensions when needed
-4. Use hx-boost for full page navigation
-5. Implement proper error handling
-6. Follow progressive enhancement principles
-7. Use server-side templating (e.g., Jinja2, Handlebars)
-`;
+// Development Guidelines
+1. HTMX Attributes:
+   - Use hx-get for GET requests
+   - Use hx-post for POST requests
+   - Use hx-trigger for events
+   - Use hx-swap for content updates
+   - Use hx-target for targeting
+   - Use hx-indicator for loading states
+
+2. Server Integration:
+   - Implement CSRF protection
+   - Return partial HTML
+   - Handle errors gracefully
+   - Use proper status codes
+   - Validate inputs
+   - Follow REST principles
+
+3. Progressive Enhancement:
+   - Start with plain HTML
+   - Add HTMX attributes
+   - Use JavaScript sparingly
+   - Support non-JS users
+   - Handle fallbacks
+   - Maintain accessibility
+
+// Dependencies
+Core:
+- htmx: "^1.9.0"
+- html: "HTML5"
+- python: "^3.8"
+- flask: "^2.0.0"
+
+Optional:
+- hyperscript: "^0.9.0"
+- tailwindcss: "^3.0.0"
+- alpine.js: "^3.0.0"
+- flask-wtf: "^1.0.0"
+
+// Code Examples:
+
+1. Basic Form Pattern:
+```html
+<!-- Contact Form -->
+<form hx-post="/contact" 
+      hx-target="#response"
+      hx-swap="outerHTML"
+      hx-indicator="#spinner">
+  
+  <div class="form-group">
+    <label for="email">Email:</label>
+    <input type="email" 
+           name="email" 
+           id="email"
+           required
+           hx-validate="true">
+    <div id="email-error" class="error-message"></div>
+  </div>
+  
+  <div class="form-group">
+    <label for="message">Message:</label>
+    <textarea name="message" 
+              id="message"
+              required
+              hx-validate="true"></textarea>
+    <div id="message-error" class="error-message"></div>
+  </div>
+  
+  <button type="submit">
+    Send Message
+    <span id="spinner" 
+          class="htmx-indicator">
+      Loading...
+    </span>
+  </button>
+  
+  <div id="response"></div>
+</form>
+```
+
+2. Server Response Pattern:
+```python
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/contact', methods=['POST'])
+def contact():
+    # Validate form data
+    if not validate_form():
+        return render_template('components/form_errors.html'), 400
+    
+    try:
+        # Process the contact form
+        process_contact_form()
+        
+        # Return success message
+        return render_template(
+            'components/success_message.html',
+            message="Thank you for your message!"
+        )
+    except Exception as e:
+        # Return error message
+        return render_template(
+            'components/error_message.html',
+            error="Failed to send message"
+        ), 500
+```
+
+3. Infinite Scroll Pattern:
+```html
+<!-- Item List -->
+<div id="items"
+     hx-get="/items?page=${next}"
+     hx-trigger="revealed"
+     hx-swap="beforeend"
+     hx-indicator=".loading">
+  
+  <!-- Initial items -->
+  {% for item in items %}
+  <div class="item">
+    <h3>{{ item.title }}</h3>
+    <p>{{ item.description }}</p>
+    
+    <button hx-get="/items/{{ item.id }}/like"
+            hx-target="closest .item"
+            hx-swap="outerHTML">
+      Like ({{ item.likes }})
+    </button>
+  </div>
+  {% endfor %}
+  
+  <!-- Loading indicator -->
+  <div class="loading htmx-indicator">
+    Loading more items...
+  </div>
+</div>
+```
+
+// Best Practices:
+1. Use semantic HTML
+2. Follow REST principles
+3. Implement proper validation
+4. Handle errors gracefully
+5. Show loading states
+6. Use proper targeting
+7. Optimize performance
+8. Maintain accessibility
+9. Follow progressive enhancement
+10. Document endpoints
+
+// Security Considerations:
+1. Implement CSRF protection
+2. Validate all inputs
+3. Sanitize HTML responses
+4. Use proper headers
+5. Handle errors securely
+6. Implement rate limiting
+7. Use HTTPS
+8. Follow SOP/CORS
+9. Protect against XSS
+10. Audit dependencies

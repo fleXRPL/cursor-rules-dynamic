@@ -1,1 +1,208 @@
-you are an expert Angular programmer using TypeScript, Angular 18 and Jest that focuses on producing clear, readable code.you are thoughtful, give nuanced answers, and are brilliant at reasoning.you carefully provide accurate, factual, thoughtful answers and are a genius at reasoning.before providing an answer, think step by step, and provide a detailed, thoughtful answer.if you need more information, ask for it.always write correct, up to date, bug free, fully functional and working code.focus on performance, readability, and maintainability.before providing an answer, double check your workinclude all required imports, and ensure proper naming of key componentsdo not nest code more than 2 levels deepprefer using the forNext function, located in libs/smart-ngrx/src/common/for-next.function.ts instead of for(let i;i < length;i++), forEach or for(x of y)code should obey the rules defined in the .eslintrc.json, .prettierrc, .htmlhintrc, and .editorconfig filesfunctions and methods should not have more than 4 parametersfunctions should not have more than 50 executable lineslines should not be more than 80 characterswhen refactoring existing code, keep jsdoc comments intactbe concise and minimize extraneous prose.if you don't know the answer to a request, say so instead of making something up.
+// Angular TypeScript Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Angular application with TypeScript:
+- Enterprise-grade SPA applications
+- Progressive Web Apps (PWA)
+- Micro-frontends
+- Server-side rendered apps
+- Dynamic forms and validations
+- Real-time data applications
+- Internationalized applications
+- Accessible web applications
+
+// Project Structure
+src/
+  app/                # Application root
+    components/       # Shared components
+      ui/             # UI components
+      forms/          # Form components
+      layouts/        # Layout components
+    features/         # Feature modules
+      feature-a/      # Feature module A
+        components/   # Feature components
+        services/     # Feature services
+        models/       # Feature models
+        store/        # Feature state
+    core/             # Core functionality
+      interceptors/   # HTTP interceptors
+      guards/         # Route guards
+      services/       # Core services
+    shared/           # Shared resources
+      interfaces/     # TypeScript interfaces
+      types/          # Custom types
+      constants/      # Constants
+      utils/          # Utility functions
+    store/            # Global state
+      actions/        # State actions
+      reducers/       # State reducers
+      effects/        # Side effects
+  assets/             # Static assets
+  environments/       # Environment configs
+  styles/             # Global styles
+
+// Development Guidelines
+1. TypeScript Best Practices:
+   - Use strict mode
+   - Define proper interfaces
+   - Implement type guards
+   - Use generics appropriately
+   - Handle null checks
+   - Use proper access modifiers
+
+2. Angular Architecture:
+   - Follow LIFT principle
+   - Use smart/dumb components
+   - Implement proper routing
+   - Handle state management
+   - Use dependency injection
+   - Follow change detection
+
+3. Performance Optimization:
+   - Use lazy loading
+   - Implement caching
+   - Optimize change detection
+   - Use proper bundling
+   - Handle memory leaks
+   - Implement preloading
+
+// Dependencies
+Core:
+- @angular/core: "~16.0.0"
+- @angular/common: "~16.0.0"
+- @angular/forms: "~16.0.0"
+- @angular/router: "~16.0.0"
+- typescript: "~5.1.0"
+- rxjs: "~7.8.0"
+- zone.js: "~0.13.0"
+
+Optional:
+- @ngrx/store: "~16.0.0"
+- @ngrx/effects: "~16.0.0"
+- @angular/pwa: "~16.0.0"
+- @angular-eslint/eslint-plugin: "~16.0.0"
+- jest: "^29.0.0"
+
+// Code Examples:
+
+1. Component Pattern:
+```typescript
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+@Component({
+  selector: 'app-user-card',
+  template: `
+    <div class="user-card">
+      <h2>{{ user.name }}</h2>
+      <p>{{ user.email }}</p>
+      <button (click)="onEdit.emit(user)">Edit</button>
+      <button (click)="onDelete.emit(user.id)">Delete</button>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class UserCardComponent {
+  @Input() user!: User;
+  @Output() onEdit = new EventEmitter<User>();
+  @Output() onDelete = new EventEmitter<number>();
+}
+```
+
+2. Service Pattern:
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, catchError, map } from 'rxjs';
+import { environment } from '@env/environment';
+
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  status: number;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  private apiUrl = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  getData<T>(endpoint: string): Observable<T> {
+    return this.http.get<ApiResponse<T>>(`${this.apiUrl}/${endpoint}`).pipe(
+      map(response => response.data),
+      catchError(this.handleError)
+    );
+  }
+
+  private handleError(error: any): Observable<never> {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+```
+
+3. Guard Pattern:
+```typescript
+import { Injectable } from '@angular/core';
+import { CanActivate, Router, ActivatedRouteSnapshot } from '@angular/router';
+import { Observable } from 'rxjs';
+import { map, take } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
+import { AuthState } from './store/auth.state';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthGuard implements CanActivate {
+  constructor(
+    private store: Store<AuthState>,
+    private router: Router
+  ) {}
+
+  canActivate(route: ActivatedRouteSnapshot): Observable<boolean> {
+    return this.store.select(state => state.auth.isAuthenticated).pipe(
+      take(1),
+      map(isAuthenticated => {
+        if (!isAuthenticated) {
+          this.router.navigate(['/login']);
+          return false;
+        }
+        return true;
+      })
+    );
+  }
+}
+```
+
+// Best Practices:
+1. Use TypeScript features effectively
+2. Follow Angular style guide
+3. Implement proper error handling
+4. Use reactive programming
+5. Write unit tests
+6. Document code properly
+7. Use proper state management
+8. Implement proper routing
+9. Handle async operations
+10. Optimize performance
+
+// Security Considerations:
+1. Implement proper authentication
+2. Use route guards
+3. Sanitize user input
+4. Handle XSS protection
+5. Implement CSRF protection
+6. Use HTTPS
+7. Handle sensitive data
+8. Implement proper logging
+9. Use secure dependencies
+10. Follow security updates

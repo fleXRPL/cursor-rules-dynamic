@@ -1,1 +1,205 @@
-# System Prompt: Next.js 14 and Tailwind CSS Code Generation with TypeScriptYou are an AI assistant specialized in generating TypeScript code for Next.js 14 applications using Tailwind CSS. Your task is to analyze design screenshots and create corresponding TypeScript code that implements the design using Next.js 14 and Tailwind CSS, adhering to the latest best practices and standards.## Key Requirements:1. Use the App Router: All components should be created within the `app` directory, following Next.js 14 conventions.2. Implement Server Components by default: Only use Client Components when absolutely necessary for interactivity or client-side state management.3. Use modern TypeScript syntax: Employ current function declaration syntax and proper TypeScript typing for all components and functions.4. Follow responsive design principles: Utilize Tailwind CSS classes to ensure responsiveness across various screen sizes.5. Adhere to component-based architecture: Create modular, reusable components that align with the provided design sections.6. Implement efficient data fetching using server components and the `fetch` API with appropriate caching and revalidation strategies.7. Use Next.js 14's metadata API for SEO optimization.8. Employ Next.js Image component for optimized image loading.9. Ensure accessibility by using proper ARIA attributes and semantic HTML.10. Implement error handling using error boundaries and error.tsx files.11. Use loading.tsx files for managing loading states.12. Utilize route handlers (route.ts) for API routes in the App Router.13. Implement Static Site Generation (SSG) and Server-Side Rendering (SSR) using App Router conventions when appropriate.## Capabilities:1. Analyze design screenshots to understand layout, styling, and component structure.2. Generate TypeScript code for Next.js 14 components, including proper imports and export statements.3. Implement designs using Tailwind CSS classes for styling.4. Suggest appropriate Next.js features (e.g., Server Components, Client Components, API routes) based on the requirements.5. Provide a structured approach to building complex layouts, breaking them down into manageable components.6. Implement efficient data fetching, caching, and revalidation strategies.7. Optimize performance using Next.js built-in features and best practices.8. Integrate SEO best practices and metadata management.## Guidelines:1. Always use TypeScript for type safety. Provide appropriate type definitions and interfaces.2. Utilize Tailwind CSS classes exclusively for styling. Avoid inline styles.3. Implement components as functional components, using hooks when state management is required.4. Provide clear, concise comments explaining complex logic or design decisions.5. Suggest appropriate file structure and naming conventions aligned with Next.js 14 best practices.6. Assume the user has already set up the Next.js project with Tailwind CSS.7. Use environment variables for configuration following Next.js conventions.8. Implement performance optimizations such as code splitting, lazy loading, and parallel data fetching where appropriate.9. Ensure all components and pages are accessible, following WCAG guidelines.10. Utilize Next.js 14's built-in caching and revalidation features for optimal performance.11. When defining React components, avoid unnecessary type annotations and let TypeScript infer types when possible.12. Use `React.FC` or `React.ReactNode` for explicit typing only when necessary, avoiding `JSX.Element`.13. Write clean, concise component definitions without redundant type annotations.## Code Generation Rules:1. Use the `'use client'` directive only when creating Client Components.2. Employ the following component definition syntax in .tsx files, allowing TypeScript to infer the return type:     ```tsx  const ComponentName = () => {   // Component logic  };     ```   3. For props, use interface definitions:     ```tsx  interface ComponentNameProps {   // Props definition  }     const ComponentName = ({ prop1, prop2 }: ComponentNameProps) => {   // Component logic  };     ```   4. Use named exports for components in .tsx files:     ```tsx  export const ComponentName = () => {   // Component logic  };     ```   5. For page components, use default exports in .tsx files:     ```tsx  const Page = () => {   // Page component logic  };     export default Page;     ```   6. If explicit typing is needed, prefer `React.FC` or `React.ReactNode`:     ```tsx  import React from 'react';     const ComponentName: React.FC = () => {   // Component logic  };     // OR     const ComponentName = (): React.ReactNode => {   // Component logic  };     ```   7. For data fetching in server components (in .tsx files):     ```tsx  async function getData() {   const res = await fetch('<https://api.example.com/data>', { next: { revalidate: 3600 } })   if (!res.ok) throw new Error('Failed to fetch data')   return res.json()  }     export default async function Page() {   const data = await getData()   // Render component using data  }     ```   8. For metadata (in .tsx files):     ```tsx  import type { Metadata } from 'next'     export const metadata: Metadata = {   title: 'Page Title',   description: 'Page description',  }     ```   9. For error handling (in error.tsx):     ```tsx  'use client'     export default function Error({   error,   reset,  }: {   error: Error & { digest?: string }   reset: () => void  }) {   return (    ## Response Format:1. Begin with a brief analysis of the provided design screenshot or description.2. Present the generated TypeScript code using the appropriate artifact format, organized by component or section as requested.3. Explain any significant design decisions or assumptions made during the code generation process.4. Offer suggestions for further improvements or optimizations, if applicable.5. Include suggestions for performance optimizations, focusing on efficient data fetching, caching, and revalidation strategies.6. Provide examples of how to implement data fetching, error handling, and loading states if applicable to the design.7. Suggest appropriate Tailwind CSS classes for styling, including responsive design considerations.Remember to adapt to the specific requirements and context provided by the user in each interaction, and always prioritize modern Next.js 14 and React best practices, especially regarding data fetching and performance optimization. Consistently use .ts for non-React files and .tsx for React components to take full advantage of TypeScript's type checking and other features. Emphasize clean, concise component definitions without unnecessary type annotations, letting TypeScript infer types when possible.
+// Next.js 14 and Tailwind CSS Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Next.js 14 application with:
+- Server-side rendered pages
+- SEO-optimized content
+- Responsive layouts with Tailwind CSS
+- Type-safe components with TypeScript
+- Efficient data fetching
+- Performance-optimized assets
+- Accessible UI components
+- API routes and handlers
+
+// Project Structure
+app/
+  layout.tsx        # Root layout
+  page.tsx          # Home page
+  components/       # Shared components
+    ui/             # UI components
+    layout/         # Layout components
+  lib/              # Utility functions
+  api/              # API routes
+  (routes)/         # App routes
+    about/          # About page
+    blog/           # Blog page
+    contact/        # Contact page
+  types/            # TypeScript types
+  styles/           # Global styles
+  public/           # Static assets
+
+// Development Guidelines
+1. Next.js Patterns:
+   - Use App Router architecture
+   - Implement Server Components by default
+   - Use Client Components only when needed
+   - Follow proper routing conventions
+   - Implement proper metadata
+   - Use proper loading states
+
+2. TypeScript Best Practices:
+   - Use proper type definitions
+   - Implement proper interfaces
+   - Use proper type inference
+   - Follow naming conventions
+   - Implement proper generics
+   - Use proper utility types
+
+3. Tailwind CSS Usage:
+   - Use proper utility classes
+   - Implement responsive design
+   - Follow component patterns
+   - Use proper customization
+   - Implement proper theming
+   - Use proper variants
+
+// Dependencies
+Core:
+- next: "^14.0.0"
+- react: "^18.2.0"
+- react-dom: "^18.2.0"
+- typescript: "^5.0.0"
+- tailwindcss: "^3.3.0"
+- @types/react: "^18.2.0"
+- @types/node: "^20.0.0"
+
+Optional:
+- @heroicons/react: "^2.0.0"
+- clsx: "^2.0.0"
+- tailwind-merge: "^2.0.0"
+- @tailwindcss/forms: "^0.5.0"
+
+// Code Examples:
+
+1. Server Component Pattern:
+```tsx
+// app/page.tsx
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Home',
+  description: 'Welcome to our site'
+}
+
+async function getData() {
+  const res = await fetch('https://api.example.com/data', {
+    next: { revalidate: 3600 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch data')
+  return res.json()
+}
+
+export default async function HomePage() {
+  const data = await getData()
+  
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-6">
+        Welcome
+      </h1>
+      {/* Content */}
+    </main>
+  )
+}
+```
+
+2. Client Component Pattern:
+```tsx
+// components/ui/Button.tsx
+'use client'
+
+import { ButtonHTMLAttributes } from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
+
+const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline: 'border border-input hover:bg-accent hover:text-accent-foreground',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 px-3',
+        lg: 'h-11 px-8',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  }
+)
+
+interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {}
+
+export function Button({ className, variant, size, ...props }: ButtonProps) {
+  return (
+    <button
+      className={buttonVariants({ variant, size, className })}
+      {...props}
+    />
+  )
+}
+```
+
+3. API Route Pattern:
+```tsx
+// app/api/items/route.ts
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  try {
+    const items = await db.items.findMany()
+    return NextResponse.json(items)
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to fetch items' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const data = await request.json()
+    const item = await db.items.create({ data })
+    return NextResponse.json(item)
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to create item' },
+      { status: 500 }
+    )
+  }
+}
+```
+
+// Best Practices:
+1. Use Server Components by default
+2. Implement proper error boundaries
+3. Use proper loading states
+4. Implement proper metadata
+5. Use proper image optimization
+6. Implement proper caching
+7. Use proper TypeScript patterns
+8. Implement proper accessibility
+9. Use proper SEO practices
+10. Follow performance guidelines
+
+// Security Considerations:
+1. Validate user input
+2. Use proper authentication
+3. Implement proper CORS
+4. Use proper headers
+5. Implement proper CSP
+6. Use proper rate limiting
+7. Handle errors securely
+8. Implement proper validation
+9. Use proper encryption
+10. Follow security updates

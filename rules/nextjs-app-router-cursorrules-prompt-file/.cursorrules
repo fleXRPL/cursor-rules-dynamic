@@ -1,34 +1,480 @@
-// Next.js App Router .cursorrules
+// Next.js App Router Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-// Next.js App Router best practices
-const nextjsAppRouterBestPractices = [
-  "Use server components by default",
-  "Implement client components only when necessary",
-  "Utilize the new file-based routing system",
-  "Use layout.js for shared layouts",
-  "Implement loading.js for loading states",
-  "Use error.js for error handling",
-  "Utilize route handlers for API routes",
-];
+// What you can build with this ruleset:
+A modern Next.js application using the App Router:
+- Server Components
+- Client Components
+- Route Handlers
+- Server Actions
+- Dynamic Routes
+- Parallel Routes
+- Intercepting Routes
+- Loading UI
+- Error Handling
+- Authentication
+- Database Integration
+- API Routes
 
-// Folder structure
-const folderStructure = `
+// Project Structure
 app/
-  layout.js
-  page.js
-  components/
-  lib/
-  styles/
-public/
-`;
+  (auth)/          # Auth group
+    login/         # Login page
+    register/      # Register page
+    layout.tsx     # Auth layout
+  (dashboard)/     # Dashboard group
+    layout.tsx     # Dashboard layout
+    page.tsx       # Dashboard page
+    loading.tsx    # Loading UI
+    error.tsx      # Error UI
+    not-found.tsx  # 404 page
+  api/             # API routes
+    auth/          # Auth endpoints
+    users/         # User endpoints
+  components/      # Shared components
+    ui/            # UI components
+    forms/         # Form components
+  lib/             # Utilities
+    db/            # Database utils
+    auth/          # Auth utils
+    api/           # API utils
+  hooks/           # Custom hooks
+  providers/       # Context providers
+  styles/          # Global styles
+  types/           # TypeScript types
+  config/          # Configuration
+  public/          # Static assets
+  tests/           # Test suite
 
-// Additional instructions
-const additionalInstructions = `
-1. Use TypeScript for type safety
-2. Implement proper metadata for SEO
-3. Utilize Next.js Image component for optimized images
-4. Use CSS Modules or Tailwind CSS for styling
-5. Implement proper error boundaries
-6. Follow Next.js naming conventions for special files
-7. Use environment variables for configuration
-`;
+// Development Guidelines
+1. Component Structure:
+   - Server Components
+   - Client Components
+   - Layouts
+   - Templates
+   - Error Boundaries
+   - Suspense
+
+2. Data Fetching:
+   - Server Components
+   - Route Handlers
+   - Server Actions
+   - Caching
+   - Revalidation
+   - Mutations
+
+3. Performance:
+   - Static Generation
+   - Streaming
+   - Partial Rendering
+   - Image Optimization
+   - Font Optimization
+   - Bundle Size
+
+// Dependencies
+Core:
+- next: "^14.0.0"
+- react: "^18.2.0"
+- react-dom: "^18.2.0"
+- typescript: "^5.0.0"
+
+Optional:
+- tailwindcss: "^3.3.0"
+- shadcn/ui: "^0.4.0"
+- prisma: "^5.0.0"
+- next-auth: "^4.24.0"
+
+// Code Examples:
+
+1. Page Pattern:
+```tsx
+// app/posts/[id]/page.tsx
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import { PostContent } from '@/components/posts/PostContent';
+import { PostComments } from '@/components/posts/PostComments';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { getPost } from '@/lib/api/posts';
+
+export const generateMetadata = async ({ params }: { params: { id: string } }) => {
+  const post = await getPost(params.id);
+  
+  if (!post) {
+    return {
+      title: 'Post Not Found',
+    };
+  }
+  
+  return {
+    title: post.title,
+    description: post.excerpt,
+  };
+};
+
+export default async function PostPage({ params }: { params: { id: string } }) {
+  const post = await getPost(params.id);
+  
+  if (!post) {
+    notFound();
+  }
+  
+  return (
+    <article className="max-w-4xl mx-auto py-8">
+      <PostContent post={post} />
+      
+      <Suspense fallback={<LoadingSpinner />}>
+        <PostComments postId={params.id} />
+      </Suspense>
+    </article>
+  );
+}
+```
+
+2. Layout Pattern:
+```tsx
+// app/(dashboard)/layout.tsx
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { DashboardNav } from '@/components/dashboard/DashboardNav';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+
+export default async function DashboardLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+  
+  if (!session) {
+    redirect('/login');
+  }
+  
+  return (
+    <div className="flex h-screen">
+      <DashboardNav />
+      <main className="flex-1 overflow-y-auto">
+        <DashboardHeader user={session.user} />
+        <div className="container mx-auto py-6">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}
+```
+
+3. Route Handler Pattern:
+```tsx
+// app/api/posts/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+
+const postSchema = z.object({
+  title: z.string().min(1).max(100),
+  content: z.string().min(1),
+  published: z.boolean().default(false),
+});
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+    
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const json = await request.json();
+    const body = postSchema.parse(json);
+    
+    const post = await prisma.post.create({
+      data: {
+        ...body,
+        authorId: session.user.id,
+      },
+    });
+    
+    return NextResponse.json(post);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const published = searchParams.get('published');
+    
+    const posts = await prisma.post.findMany({
+      where: {
+        published: published ? published === 'true' : undefined,
+      },
+      include: {
+        author: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+    
+    return NextResponse.json(posts);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+4. Server Action Pattern:
+```tsx
+// app/actions/posts.ts
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { PostSchema } from '@/lib/validations/post';
+
+export async function createPost(formData: FormData) {
+  try {
+    const session = await auth();
+    
+    if (!session) {
+      return {
+        error: 'Unauthorized',
+      };
+    }
+    
+    const rawData = {
+      title: formData.get('title'),
+      content: formData.get('content'),
+      published: formData.get('published') === 'true',
+    };
+    
+    const validatedData = PostSchema.parse(rawData);
+    
+    const post = await prisma.post.create({
+      data: {
+        ...validatedData,
+        authorId: session.user.id,
+      },
+    });
+    
+    revalidatePath('/posts');
+    
+    return { data: post };
+  } catch (error) {
+    return {
+      error: 'Failed to create post',
+    };
+  }
+}
+
+export async function deletePost(postId: string) {
+  try {
+    const session = await auth();
+    
+    if (!session) {
+      return {
+        error: 'Unauthorized',
+      };
+    }
+    
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+    
+    if (!post) {
+      return {
+        error: 'Post not found',
+      };
+    }
+    
+    if (post.authorId !== session.user.id) {
+      return {
+        error: 'Unauthorized',
+      };
+    }
+    
+    await prisma.post.delete({
+      where: { id: postId },
+    });
+    
+    revalidatePath('/posts');
+    
+    return { success: true };
+  } catch (error) {
+    return {
+      error: 'Failed to delete post',
+    };
+  }
+}
+```
+
+5. Client Component Pattern:
+```tsx
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createPost } from '@/app/actions/posts';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/toast';
+
+export function CreatePostForm() {
+  const router = useRouter();
+  const [isPending, setIsPending] = useState(false);
+  
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsPending(true);
+    
+    try {
+      const formData = new FormData(event.currentTarget);
+      const result = await createPost(formData);
+      
+      if (result.error) {
+        toast({
+          title: 'Error',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Post created successfully',
+      });
+      
+      router.push(`/posts/${result.data.id}`);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Something went wrong',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPending(false);
+    }
+  }
+  
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="title">Title</label>
+        <Input
+          id="title"
+          name="title"
+          required
+          disabled={isPending}
+        />
+      </div>
+      
+      <div>
+        <label htmlFor="content">Content</label>
+        <Textarea
+          id="content"
+          name="content"
+          required
+          disabled={isPending}
+        />
+      </div>
+      
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            name="published"
+            value="true"
+            disabled={isPending}
+          />
+          Publish immediately
+        </label>
+      </div>
+      
+      <Button type="submit" disabled={isPending}>
+        {isPending ? 'Creating...' : 'Create Post'}
+      </Button>
+    </form>
+  );
+}
+```
+
+// Best Practices:
+1. Code Quality:
+   - TypeScript
+   - ESLint
+   - Prettier
+   - Testing
+   - Documentation
+   - Code reviews
+
+2. Performance:
+   - Server Components
+   - Static Generation
+   - Streaming
+   - Caching
+   - Bundle Size
+   - Image Optimization
+
+3. Security:
+   - Authentication
+   - Authorization
+   - Input Validation
+   - CSRF Protection
+   - XSS Prevention
+   - API Security
+
+4. SEO:
+   - Metadata
+   - Sitemap
+   - Robots.txt
+   - Structured Data
+   - Open Graph
+   - Twitter Cards
+
+// Security Considerations:
+1. API Security:
+   - Authentication
+   - Authorization
+   - Rate Limiting
+   - Input Validation
+   - Error Handling
+   - Logging
+
+2. Data Security:
+   - Encryption
+   - Password Hashing
+   - Access Control
+   - Audit Logging
+   - Data Validation
+   - Backups
+
+3. Infrastructure:
+   - HTTPS
+   - CORS
+   - CSP
+   - Rate Limiting
+   - Monitoring
+   - Logging

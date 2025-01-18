@@ -1,36 +1,246 @@
-// HTMX with Flask .cursorrules
+// HTMX with Flask Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-// HTMX and Flask best practices
-const htmxFlaskBestPractices = [
-  "Use Flask's render_template for server-side rendering",
-  "Implement Flask-WTF for form handling",
-  "Utilize Flask's url_for for generating URLs",
-  "Use Flask's jsonify for JSON responses",
-  "Implement Flask-SQLAlchemy for database operations",
-  "Utilize Flask's Blueprint for modular applications",
-];
+// What you can build with this ruleset:
+Modern Flask applications with HTMX integration featuring:
+- Server-side rendered templates
+- Dynamic UI updates without JavaScript
+- Flask form integration
+- Real-time interactions
+- Database-driven updates
+- Infinite scrolling
+- Modal dialogs
+- Live search
 
-// Folder structure
-const folderStructure = `
+// Project Structure
 app/
-  templates/
-  static/
-    css/
-    js/
-  models/
-  routes/
-  __init__.py
-config.py
-run.py
-`;
+  templates/       # HTML templates
+    base.html      # Base template
+    components/    # Reusable components
+      form.html    # Form component
+      modal.html   # Modal component
+    pages/         # Page templates
+      index.html   # Home page
+      about.html   # About page
+  static/          # Static assets
+    css/           # Stylesheets
+      main.css     # Main styles
+    js/            # JavaScript
+      htmx.min.js  # HTMX library
+  models/          # Database models
+    __init__.py    # Package init
+    user.py        # User model
+    item.py        # Item model
+  routes/          # Route handlers
+    __init__.py    # Package init
+    main.py        # Main routes
+    api.py         # API routes
+  forms/           # Form definitions
+    __init__.py    # Package init
+    user.py        # User forms
+    item.py        # Item forms
+  __init__.py      # App factory
+config.py          # Configuration
+run.py            # Entry point
 
-// Additional instructions
-const additionalInstructions = `
-1. Use Jinja2 templating with HTMX attributes
-2. Implement proper CSRF protection with Flask-WTF
-3. Utilize Flask's request object for handling HTMX requests
-4. Use Flask-Migrate for database migrations
-5. Implement proper error handling and logging
-6. Follow Flask's application factory pattern
-7. Use environment variables for configuration
-`;
+// Development Guidelines
+1. Flask Integration:
+   - Use application factory
+   - Implement Flask-WTF forms
+   - Follow Blueprint patterns
+   - Use Jinja2 templates
+   - Handle CSRF properly
+   - Follow Flask conventions
+
+2. HTMX Patterns:
+   - Use template filters
+   - Return partial HTML
+   - Handle form validation
+   - Implement error responses
+   - Show loading states
+   - Use proper targeting
+
+3. Database Patterns:
+   - Use SQLAlchemy ORM
+   - Optimize queries
+   - Handle transactions
+   - Implement caching
+   - Follow migrations
+   - Maintain consistency
+
+// Dependencies
+Core:
+- flask: "^2.3.0"
+- htmx: "^1.9.0"
+- python: "^3.8"
+- flask-sqlalchemy: "^3.0.0"
+
+Optional:
+- flask-wtf: "^1.1.0"
+- flask-migrate: "^4.0.0"
+- flask-login: "^0.6.0"
+- flask-caching: "^2.0.0"
+
+// Code Examples:
+
+1. Flask Route Pattern:
+```python
+from flask import Blueprint, render_template, request, jsonify
+from .models import Item
+from .forms import ItemForm
+
+bp = Blueprint('items', __name__)
+
+@bp.route('/items', methods=['GET'])
+def list_items():
+    page = request.args.get('page', 1, type=int)
+    items = Item.query.paginate(page=page, per_page=10)
+    
+    # Check if HTMX request
+    if request.headers.get('HX-Request'):
+        return render_template(
+            'components/item_list.html',
+            items=items
+        )
+    
+    # Regular request - full page
+    return render_template(
+        'pages/items.html',
+        items=items
+    )
+
+@bp.route('/items/create', methods=['POST'])
+def create_item():
+    form = ItemForm()
+    
+    if form.validate_on_submit():
+        item = Item(
+            title=form.title.data,
+            description=form.description.data
+        )
+        db.session.add(item)
+        db.session.commit()
+        
+        # Return new item HTML
+        return render_template(
+            'components/item.html',
+            item=item
+        )
+    
+    # Return form errors
+    return jsonify(form.errors), 400
+```
+
+2. Flask Template Pattern:
+```html
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Item List -->
+<div id="items-container"
+     hx-get="{{ url_for('items.list_items') }}"
+     hx-trigger="revealed"
+     hx-swap="beforeend"
+     hx-indicator=".loading">
+    
+    {% include "components/item_list.html" %}
+    
+    <div class="loading htmx-indicator">
+        Loading more items...
+    </div>
+</div>
+
+<!-- Item Form -->
+<form hx-post="{{ url_for('items.create_item') }}"
+      hx-target="#items-container"
+      hx-swap="afterbegin"
+      class="item-form">
+    {{ form.csrf_token }}
+    
+    <div class="form-group">
+        {{ form.title.label }}
+        {{ form.title(class="form-control") }}
+        <div class="error-message" id="title-error"></div>
+    </div>
+    
+    <div class="form-group">
+        {{ form.description.label }}
+        {{ form.description(class="form-control") }}
+        <div class="error-message" id="description-error"></div>
+    </div>
+    
+    <button type="submit" class="btn btn-primary">
+        Add Item
+    </button>
+</form>
+
+{% endblock %}
+```
+
+3. Flask Form Pattern:
+```python
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField
+from wtforms.validators import DataRequired, Length
+
+class ItemForm(FlaskForm):
+    title = StringField(
+        'Title',
+        validators=[
+            DataRequired(),
+            Length(min=3, max=100)
+        ]
+    )
+    
+    description = TextAreaField(
+        'Description',
+        validators=[
+            DataRequired(),
+            Length(min=10, max=500)
+        ]
+    )
+    
+    def validate_title(self, field):
+        # Check for unique title
+        if Item.query.filter_by(title=field.data).first():
+            raise ValidationError('Title must be unique')
+
+# Custom response handler
+def handle_form_errors(form):
+    """Convert WTForms errors to HTMX-friendly response."""
+    errors = {}
+    for field, messages in form.errors.items():
+        errors[f"{field}-error"] = {
+            "innerHTML": " ".join(messages)
+        }
+    
+    response = jsonify({
+        "errors": errors
+    })
+    response.status_code = 400
+    return response
+```
+
+// Best Practices:
+1. Follow Flask conventions
+2. Use Blueprints
+3. Implement proper forms
+4. Handle CSRF correctly
+5. Optimize database queries
+6. Use template inheritance
+7. Handle errors gracefully
+8. Write comprehensive tests
+9. Document endpoints
+10. Follow URL naming
+
+// Security Considerations:
+1. Enable CSRF protection
+2. Validate form inputs
+3. Sanitize HTML output
+4. Use proper permissions
+5. Handle file uploads safely
+6. Implement rate limiting
+7. Use HTTPS
+8. Secure configuration
+9. Audit dependencies
+10. Log security events

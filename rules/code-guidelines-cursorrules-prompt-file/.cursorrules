@@ -1,1 +1,252 @@
-1. **Verify Information**: Always verify information before presenting it. Do not make assumptions or speculate without clear evidence.2. **File-by-File Changes**: Make changes file by file and give me a chance to spot mistakes.3. **No Apologies**: Never use apologies.4. **No Understanding Feedback**: Avoid giving feedback about understanding in comments or documentation.5. **No Whitespace Suggestions**: Don't suggest whitespace changes.6. **No Summaries**: Don't summarize changes made.7. **No Inventions**: Don't invent changes other than what's explicitly requested.8. **No Unnecessary Confirmations**: Don't ask for confirmation of information already provided in the context.9. **Preserve Existing Code**: Don't remove unrelated code or functionalities. Pay attention to preserving existing structures.10. **Single Chunk Edits**: Provide all edits in a single chunk instead of multiple-step instructions or explanations for the same file.11. **No Implementation Checks**: Don't ask the user to verify implementations that are visible in the provided context.12. **No Unnecessary Updates**: Don't suggest updates or changes to files when there are no actual modifications needed.13. **Provide Real File Links**: Always provide links to the real files, not the context generated file.14. **No Current Implementation**: Don't show or discuss the current implementation unless specifically requested.15. **Check Context Generated File Content**: Remember to check the context generated file for the current file contents and implementations.16. **Use Explicit Variable Names**: Prefer descriptive, explicit variable names over short, ambiguous ones to enhance code readability.17. **Follow Consistent Coding Style**: Adhere to the existing coding style in the project for consistency.18. **Prioritize Performance**: When suggesting changes, consider and prioritize code performance where applicable.19. **Security-First Approach**: Always consider security implications when modifying or suggesting code changes.20. **Test Coverage**: Suggest or include appropriate unit tests for new or modified code.21. **Error Handling**: Implement robust error handling and logging where necessary.22. **Modular Design**: Encourage modular design principles to improve code maintainability and reusability.23. **Version Compatibility**: Ensure suggested changes are compatible with the project's specified language or framework versions.24. **Avoid Magic Numbers**: Replace hardcoded values with named constants to improve code clarity and maintainability.25. **Consider Edge Cases**: When implementing logic, always consider and handle potential edge cases.26. **Use Assertions**: Include assertions wherever possible to validate assumptions and catch potential errors early.
+// Code Guidelines and Best Practices
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A comprehensive set of coding standards and practices:
+- Clean code architecture
+- Maintainable codebases
+- Scalable applications
+- Secure implementations
+- Testable components
+- Documented systems
+- Optimized solutions
+- Collaborative workflows
+
+// Core Principles
+1. Clean Code:
+   - Write self-documenting code
+   - Follow SOLID principles
+   - Keep functions small
+   - Use meaningful names
+   - Maintain single responsibility
+   - Avoid code duplication
+
+2. Code Organization:
+   - Logical file structure
+   - Clear module boundaries
+   - Consistent naming
+   - Proper encapsulation
+   - Dependency management
+   - Version control
+
+3. Documentation:
+   - Clear comments
+   - API documentation
+   - Code examples
+   - Architecture diagrams
+   - Setup instructions
+   - Contribution guides
+
+// Development Guidelines
+1. Code Style:
+   - Consistent formatting
+   - Standard conventions
+   - Clear indentation
+   - Line length limits
+   - File organization
+   - Import ordering
+
+2. Testing:
+   - Unit tests
+   - Integration tests
+   - E2E tests
+   - Test coverage
+   - Mocking
+   - CI/CD integration
+
+3. Security:
+   - Input validation
+   - Error handling
+   - Authentication
+   - Authorization
+   - Data protection
+   - Secure communication
+
+4. Performance:
+   - Optimization
+   - Caching
+   - Memory management
+   - Resource usage
+   - Load handling
+   - Monitoring
+
+// Code Examples:
+
+1. Clean Function Pattern:
+```typescript
+// Bad Example
+function process(data: any): any {
+  let result;
+  if (data.type === 'A') {
+    result = data.value * 2;
+    if (result > 100) {
+      result = 100;
+    }
+  } else if (data.type === 'B') {
+    result = data.value / 2;
+    if (result < 0) {
+      result = 0;
+    }
+  }
+  return result;
+}
+
+// Good Example
+interface ProcessData {
+  type: 'A' | 'B';
+  value: number;
+}
+
+function processData(data: ProcessData): number {
+  const processors = {
+    A: (value: number) => Math.min(value * 2, 100),
+    B: (value: number) => Math.max(value / 2, 0)
+  };
+  
+  return processors[data.type](data.value);
+}
+```
+
+2. Error Handling Pattern:
+```typescript
+// Bad Example
+async function fetchData() {
+  const data = await fetch('/api/data');
+  return data.json();
+}
+
+// Good Example
+interface ApiResponse<T> {
+  data: T | null;
+  error: Error | null;
+}
+
+async function fetchData<T>(): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch('/api/data');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return { data, error: null };
+  } catch (error) {
+    console.error('Fetch error:', error);
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error))
+    };
+  }
+}
+```
+
+3. Testing Pattern:
+```typescript
+// Bad Example
+test('process data', () => {
+  const result = processData({ value: 10 });
+  expect(result).toBe(20);
+});
+
+// Good Example
+describe('Data Processing', () => {
+  const testCases = [
+    {
+      name: 'doubles value for type A within limits',
+      input: { type: 'A' as const, value: 10 },
+      expected: 20
+    },
+    {
+      name: 'caps type A at maximum value',
+      input: { type: 'A' as const, value: 60 },
+      expected: 100
+    },
+    {
+      name: 'halves value for type B with minimum',
+      input: { type: 'B' as const, value: 10 },
+      expected: 5
+    }
+  ];
+  
+  testCases.forEach(({ name, input, expected }) => {
+    it(name, () => {
+      const result = processData(input);
+      expect(result).toBe(expected);
+    });
+  });
+  
+  it('throws error for invalid input', () => {
+    expect(() => {
+      // @ts-expect-error Testing invalid input
+      processData({ type: 'C', value: 10 });
+    }).toThrow();
+  });
+});
+```
+
+// Best Practices:
+1. Code Quality:
+   - Write readable code
+   - Follow conventions
+   - Use static typing
+   - Handle errors
+   - Write tests
+   - Document properly
+
+2. Architecture:
+   - Modular design
+   - Clear interfaces
+   - Dependency injection
+   - State management
+   - Event handling
+   - Error boundaries
+
+3. Development Process:
+   - Version control
+   - Code review
+   - CI/CD pipelines
+   - Documentation
+   - Testing strategy
+   - Release management
+
+4. Maintenance:
+   - Regular updates
+   - Dependency management
+   - Technical debt
+   - Performance monitoring
+   - Security patches
+   - Code refactoring
+
+// Security Guidelines:
+1. Input Validation:
+   - Sanitize data
+   - Type checking
+   - Size limits
+   - Format validation
+   - Range checking
+   - Character encoding
+
+2. Authentication:
+   - Secure protocols
+   - Token management
+   - Session handling
+   - Password policies
+   - 2FA support
+   - Rate limiting
+
+3. Data Protection:
+   - Encryption
+   - Access control
+   - Secure storage
+   - Data backups
+   - Audit logging
+   - Privacy compliance
+
+4. Communication:
+   - HTTPS
+   - API security
+   - CORS policies
+   - Content Security
+   - Error handling
+   - Request validation

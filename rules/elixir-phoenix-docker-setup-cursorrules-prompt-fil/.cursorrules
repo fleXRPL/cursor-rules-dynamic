@@ -1,1 +1,207 @@
-Act as an expert senior Elixir engineer.Stack: Elixir, Phoenix, Docker, PostgreSQL, Tailwind CSS, LeftHook, Sobelow, Credo, Ecto, ExUnit, Plug, Phoenix LiveView, Phoenix LiveDashboard, Gettext, Jason, Swoosh, Finch, DNS Cluster, File System Watcher, Release Please, ExCoveralls- When writing code, you will think through any considerations or requirements to make sure we've thought of everything. Only after that do you write the code.- After a response, provide three follow-up questions worded as if I'm asking you. Format in bold as Q1, Q2, Q3. These questions should be throught-provoking and dig further into the original topic. - If my response starts with "VV", give the most succinct, concise, shortest answer possible.## Commit Message Guidelines:- Always suggest a conventional commit message with an optional scope in lowercase. Follow this structure:[optional scope]: [optional body][optional footer(s)]Where:- **type:** One of the following:  - `build`: Changes that affect the build system or external dependencies (e.g., Maven, npm)  - `chore`: Other changes that don't modify src or test files  - `ci`: Changes to our CI configuration files and scripts (e.g., Circle, BrowserStack, SauceLabs)  - `docs`: Documentation only changes  - `feat`: A new feature  - `fix`: A bug fix  - `perf`: A code change that improves performance   - `refactor`: A code change that neither fixes a bug nor adds a feature  - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)  - `test`: Adding missing tests or correcting existing tests - **scope (optional):** A noun describing a section of the codebase (e.g., `fluxcd`, `deployment`).- **description:** A brief summary of the change in present tense.- **body (optional):** A more detailed explanation of the change.- **footer (optional):** One or more footers in the following format:  - `BREAKING CHANGE: ` (for breaking changes)  - `<issue_tracker_id>: ` (e.g., `Jira-123: Fixed bug in authentication`)
+// Elixir Phoenix Docker Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern containerized Phoenix application with:
+- Docker-based development
+- Production deployments
+- Database integration
+- Asset compilation
+- LiveView support
+- Monitoring setup
+- CI/CD pipelines
+- Multi-stage builds
+
+// Project Structure
+.
+├── Dockerfile           # Multi-stage Dockerfile
+├── docker-compose.yml   # Development setup
+├── .dockerignore        # Docker ignore rules
+├── config/              # Phoenix config
+│   ├── dev.exs          # Development config
+│   └── prod.exs         # Production config
+├── lib/                 # Application code
+├── rel/                 # Release config
+│   └── env.sh.eex       # Environment setup
+├── assets/              # Frontend assets
+└── scripts/             # Docker scripts
+    ├── entrypoint.sh    # Container entry
+    └── migrate.sh       # DB migrations
+
+// Development Guidelines
+1. Docker Setup:
+   - Use multi-stage builds
+   - Implement proper caching
+   - Handle dependencies
+   - Configure networking
+   - Manage volumes
+   - Set environment
+
+2. Phoenix Configuration:
+   - Handle secrets
+   - Configure database
+   - Set up assets
+   - Manage releases
+   - Configure ports
+   - Handle SSL
+
+3. Deployment Practices:
+   - Use proper tagging
+   - Implement healthchecks
+   - Handle migrations
+   - Configure logging
+   - Manage backups
+   - Monitor resources
+
+// Dependencies
+Core:
+- elixir: "~> 1.15"
+- phoenix: "~> 1.7"
+- docker: "^24.0"
+- postgres: "^15.0"
+- node: "^20.0"
+
+Optional:
+- docker-compose: "^2.21"
+- nginx: "^1.25"
+- prometheus: "^2.47"
+- grafana: "^10.1"
+
+// Code Examples:
+
+1. Dockerfile Pattern:
+```dockerfile
+# Dockerfile
+# Build stage
+FROM hexpm/elixir:1.15.7-erlang-26.1.2-alpine-3.18.4 AS builder
+
+# Install build dependencies
+RUN apk add --no-cache build-base npm git python3
+
+WORKDIR /app
+
+# Install hex + rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# Set build ENV
+ENV MIX_ENV=prod
+
+# Install mix dependencies
+COPY mix.exs mix.lock ./
+RUN mix deps.get --only $MIX_ENV
+RUN mix deps.compile
+
+# Build assets
+COPY assets assets
+RUN npm --prefix assets ci --progress=false --no-audit --loglevel=error
+RUN npm run --prefix assets deploy
+RUN mix phx.digest
+
+# Compile and build release
+COPY . .
+RUN mix compile
+RUN mix release
+
+# Release stage
+FROM alpine:3.18.4 AS app
+RUN apk add --no-cache openssl ncurses-libs
+
+WORKDIR /app
+
+RUN chown nobody:nobody /app
+
+USER nobody:nobody
+
+COPY --from=builder --chown=nobody:nobody /app/_build/prod/rel/my_app ./
+
+ENV HOME=/app
+ENV MIX_ENV=prod
+ENV PORT=4000
+
+CMD ["bin/my_app", "start"]
+```
+
+2. Docker Compose Pattern:
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      target: builder
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@db/my_app_dev
+      - SECRET_KEY_BASE=your_development_key
+    volumes:
+      - .:/app
+      - build:/app/_build
+      - deps:/app/deps
+    depends_on:
+      - db
+    command: mix phx.server
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+  build:
+  deps:
+```
+
+3. Release Configuration Pattern:
+```elixir
+# rel/env.sh.eex
+#!/bin/sh
+
+# Sets and enables heart (recommended only in daemon mode)
+# if [ "$RELEASE_COMMAND" = "daemon" ] || [ "$RELEASE_COMMAND" = "daemon_iex" ]; then
+#   HEART_COMMAND="$RELEASE_ROOT/bin/$RELEASE_NAME $RELEASE_COMMAND"
+#   export HEART_COMMAND
+#   export ELIXIR_ERL_OPTIONS="-heart"
+# fi
+
+# Set the release to work across nodes
+export RELEASE_DISTRIBUTION=name
+export RELEASE_NODE=<%= @release.name %>@127.0.0.1
+
+# Set database configuration
+export DATABASE_URL="${DATABASE_URL}"
+export SECRET_KEY_BASE="${SECRET_KEY_BASE}"
+export PHX_HOST="${PHX_HOST}"
+export PORT="${PORT}"
+```
+
+// Best Practices:
+1. Use multi-stage builds
+2. Implement proper caching
+3. Handle secrets securely
+4. Configure healthchecks
+5. Manage dependencies
+6. Handle migrations
+7. Configure logging
+8. Use proper networking
+9. Implement monitoring
+10. Follow conventions
+
+// Security Considerations:
+1. Secure secrets management
+2. Use proper permissions
+3. Scan dependencies
+4. Configure firewalls
+5. Handle SSL/TLS
+6. Implement CORS
+7. Update base images
+8. Secure networking
+9. Monitor containers
+10. Audit configurations
