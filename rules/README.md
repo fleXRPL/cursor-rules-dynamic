@@ -2,6 +2,64 @@
 
 This directory contains `.cursorrules` files that define development guidelines and best practices for various technology stacks and frameworks.
 
+## Directory Structure
+
+```bash
+rules/
+├── backend
+│   ├── deno
+│   ├── elixir
+│   ├── go
+│   ├── java
+│   ├── ml
+│   ├── nodejs
+│   ├── php
+│   └── python
+├── best-practices
+├── database
+│   ├── graphql
+│   ├── nosql
+│   └── sql
+├── devops
+│   ├── docker
+│   ├── github
+│   └── kubernetes
+├── frontend
+│   ├── angular
+│   ├── astro
+│   ├── javascript
+│   ├── nextjs
+│   ├── qwik
+│   ├── react
+│   ├── solid
+│   ├── svelte
+│   ├── typescript
+│   └── vue
+├── mobile
+│   ├── android
+│   ├── flutter
+│   ├── ios
+│   └── react-native
+├── specialized
+├── testing
+│   ├── cypress
+│   └── jest
+├── tools
+│   ├── cursor
+│   ├── desktop
+│   ├── electron
+│   ├── extensions
+│   ├── gui
+│   ├── unity
+│   └── vscode
+└── web
+    ├── html
+    ├── htmx
+    └── tailwind
+
+59 directories
+```   
+
 ## File Structure
 
 Each `.cursorrules` file follows this standardized format:
@@ -35,58 +93,6 @@ Optional:
 // Security Considerations:
 [Numbered list of security requirements]
 ```
-
-## Current Rulesets
-
-1. Python/FastAPI:
-   - `cursorrules-file-cursor-ai-python-fastapi-api/`
-   - FastAPI application development guidelines
-
-2. Deno Integration:
-   - `deno-integration-techniques-cursorrules-prompt-fle/`
-   - Deno integration patterns and practices
-
-3. Elixir Development:
-   - `elixir-engineer-guidelines-cursorrules-prompt-file/`
-   - Elixir engineering best practices
-   - `elixir-phoenix-docker-setup-cursorrules-prompt-fil/`
-   - Phoenix framework with Docker setup
-
-4. Flutter Development:
-   - `flutter-development-guidelines-cursorrules-prompt-file/`
-   - Flutter application development guidelines
-
-5. GitHub Integration:
-   - `github-code-quality-cursorrules-prompt-file/`
-   - GitHub code quality standards
-   - `github-cursorrules-prompt-file-instructions/`
-   - GitHub workflow instructions
-
-6. Go Development:
-   - `go-backend-scalability-cursorrules-prompt-file/`
-   - Go backend scalability patterns
-   - `go-servemux-rest-api-cursorrules-prompt-file/`
-   - ServeMux REST API implementation
-
-7. Graphical Apps:
-   - `graphical-apps-development-cursorrules-prompt-file/`
-   - GUI application development guidelines
-
-8. HTML/CSS/JavaScript:
-   - `html-tailwind-css-javascript-cursorrules-prompt-fi/`
-   - Modern web development with Tailwind CSS
-
-9. HTMX Integration:
-   - `htmx-basic-cursorrules-prompt-file/`
-   - Basic HTMX implementation patterns
-   - `htmx-django-cursorrules-prompt-file/`
-   - HTMX with Django integration
-   - `htmx-flask-cursorrules-prompt-file/`
-   - HTMX with Flask integration
-   - `htmx-go-basic-cursorrules-prompt-file/`
-   - HTMX with Go (basic setup)
-   - `htmx-go-fiber-cursorrules-prompt-file/`
-   - HTMX with Go Fiber framework
 
 ## Usage
 
