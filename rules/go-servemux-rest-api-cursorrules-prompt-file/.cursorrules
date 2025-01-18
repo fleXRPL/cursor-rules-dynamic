@@ -1,1 +1,253 @@
-You are an expert AI programming assistant specializing in building APIs with Go, using the standard library's net/http package and the new ServeMux introduced in Go 1.22.Always use the latest stable version of Go (1.22 or newer) and be familiar with RESTful API design principles, best practices, and Go idioms.Follow the user's requirements carefully & to the letter.First think step-by-step - describe your plan for the API structure, endpoints, and data flow in pseudocode, written out in great detail.Confirm the plan, then write code!Write correct, up-to-date, bug-free, fully functional, secure, and efficient Go code for APIs.Use the standard library's net/http package for API development:Implement proper error handling, including custom error types when beneficial.Use appropriate status codes and format JSON responses correctly.Implement input validation for API endpoints.Utilize Go's built-in concurrency features when beneficial for API performance.Follow RESTful API design principles and best practices.Include necessary imports, package declarations, and any required setup code.Implement proper logging using the standard library's log package or a simple custom logger.Consider implementing middleware for cross-cutting concerns (e.g., logging, authentication).Implement rate limiting and authentication/authorization when appropriate, using standard library features or simple custom implementations.Leave NO todos, placeholders, or missing pieces in the API implementation.Be concise in explanations, but provide brief comments for complex logic or Go-specific idioms.If unsure about a best practice or implementation detail, say so instead of guessing.Offer suggestions for testing the API endpoints using Go's testing package.Always prioritize security, scalability, and maintainability in your API designs and implementations. Leverage the power and simplicity of Go's standard library to create efficient and idiomatic APIs.
+// Go ServeMux REST API Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A production-ready REST API using Go's standard library with:
+- Modern ServeMux routing (Go 1.22+)
+- RESTful endpoint design
+- Middleware support
+- Input validation
+- Error handling
+- Authentication/Authorization
+- Rate limiting
+- Logging
+
+// Project Structure
+src/
+  api/             # API layer
+    handlers/      # Request handlers
+      users.go     # User endpoints
+      health.go    # Health checks
+    middleware/    # HTTP middleware
+      auth.go      # Authentication
+      logging.go   # Request logging
+      ratelimit.go # Rate limiting
+    models/        # Data models
+      user.go      # User model
+      error.go     # Error types
+    server/        # Server setup
+      router.go    # ServeMux setup
+      config.go    # Server config
+  internal/        # Internal packages
+    validator/     # Input validation
+    logger/        # Logging utilities
+  tests/           # Test suites
+    integration/   # Integration tests
+    unit/          # Unit tests
+
+// Development Guidelines
+1. API Design:
+   - Use RESTful principles
+   - Implement proper status codes
+   - Structure JSON responses
+   - Handle errors gracefully
+   - Validate all inputs
+   - Document endpoints
+
+2. Middleware Patterns:
+   - Implement authentication
+   - Add request logging
+   - Enable rate limiting
+   - Handle CORS
+   - Add request ID tracking
+   - Implement timeouts
+
+3. Error Handling:
+   - Use custom error types
+   - Return proper status codes
+   - Include error details
+   - Log errors appropriately
+   - Handle panics
+   - Validate inputs early
+
+// Dependencies
+Core:
+- go: "1.22"
+- net/http
+- encoding/json
+- context
+- log/slog
+- sync
+
+Optional:
+- crypto/bcrypt
+- golang.org/x/time/rate
+- golang.org/x/crypto
+- database/sql
+
+// Code Examples:
+
+1. ServeMux Router Pattern:
+```go
+package server
+
+import (
+    "net/http"
+    "encoding/json"
+    "log/slog"
+)
+
+type Server struct {
+    router *http.ServeMux
+    logger *slog.Logger
+}
+
+func NewServer(logger *slog.Logger) *Server {
+    s := &Server{
+        router: http.NewServeMux(),
+        logger: logger,
+    }
+    s.routes()
+    return s
+}
+
+func (s *Server) routes() {
+    s.router.HandleFunc("GET /api/v1/users/{id}", s.handleGetUser)
+    s.router.HandleFunc("POST /api/v1/users", s.handleCreateUser)
+    s.router.HandleFunc("GET /api/v1/health", s.handleHealthCheck)
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    s.router.ServeHTTP(w, r)
+}
+
+func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
+    id := r.PathValue("id")
+    
+    user, err := s.store.GetUser(r.Context(), id)
+    if err != nil {
+        s.errorResponse(w, r, err)
+        return
+    }
+    
+    s.jsonResponse(w, http.StatusOK, user)
+}
+```
+
+2. Middleware Pattern:
+```go
+package middleware
+
+import (
+    "net/http"
+    "time"
+    "log/slog"
+)
+
+func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            start := time.Now()
+            
+            // Wrap response writer to capture status code
+            rw := newResponseWriter(w)
+            
+            // Call next handler
+            next.ServeHTTP(rw, r)
+            
+            // Log request details
+            logger.Info("request completed",
+                "method", r.Method,
+                "path", r.URL.Path,
+                "status", rw.status,
+                "duration", time.Since(start),
+                "ip", r.RemoteAddr,
+            )
+        })
+    }
+}
+
+type responseWriter struct {
+    http.ResponseWriter
+    status int
+}
+
+func newResponseWriter(w http.ResponseWriter) *responseWriter {
+    return &responseWriter{w, http.StatusOK}
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+    rw.status = code
+    rw.ResponseWriter.WriteHeader(code)
+}
+```
+
+3. Error Handling Pattern:
+```go
+package api
+
+import (
+    "net/http"
+    "encoding/json"
+)
+
+type ErrorResponse struct {
+    Error   string `json:"error"`
+    Message string `json:"message,omitempty"`
+    Code    int    `json:"code"`
+}
+
+func (s *Server) errorResponse(w http.ResponseWriter, r *http.Request, err error) {
+    var response ErrorResponse
+    
+    switch e := err.(type) {
+    case *NotFoundError:
+        response = ErrorResponse{
+            Error:   "not_found",
+            Message: e.Error(),
+            Code:    http.StatusNotFound,
+        }
+    case *ValidationError:
+        response = ErrorResponse{
+            Error:   "validation_error",
+            Message: e.Error(),
+            Code:    http.StatusBadRequest,
+        }
+    default:
+        response = ErrorResponse{
+            Error:   "internal_error",
+            Message: "An internal error occurred",
+            Code:    http.StatusInternalServerError,
+        }
+        // Log the actual error
+        s.logger.Error("internal server error", 
+            "error", err,
+            "path", r.URL.Path,
+        )
+    }
+    
+    s.jsonResponse(w, response.Code, response)
+}
+
+func (s *Server) jsonResponse(w http.ResponseWriter, status int, data interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    if err := json.NewEncoder(w).Encode(data); err != nil {
+        s.logger.Error("failed to encode response", "error", err)
+    }
+}
+```
+
+// Best Practices:
+1. Use proper HTTP methods
+2. Implement input validation
+3. Handle errors gracefully
+4. Use middleware for cross-cutting concerns
+5. Implement proper logging
+6. Use appropriate status codes
+7. Structure JSON responses
+8. Add request timeouts
+9. Implement rate limiting
+10. Write comprehensive tests
+
+// Security Considerations:
+1. Validate all inputs
+2. Use HTTPS
+3. Implement authentication
+4. Add rate limiting
+5. Set security headers
+6. Handle CORS properly
+7. Sanitize responses
+8. Use secure cookies
+9. Implement timeouts
+10. Log security events

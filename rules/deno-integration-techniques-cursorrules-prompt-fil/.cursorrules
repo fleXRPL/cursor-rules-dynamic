@@ -1,1 +1,248 @@
-This project contains automation scripts and workflows for the @findhow packages, based on the original Deno automation repository. The goal is to provide consistent and efficient automation for the @findhow ecosystem.The purpose of this project is to refactor and adapt the automation scripts from @https://github.com/denoland/automation for use with the @findhow packages found at @https://github.com/zhorton34/findhow.When working on this project, Cursor AI should:When making changes:When updating documentation:When creating or modifying automation scripts:Remember to thoroughly test all modifications to ensure they work correctly with the @findhow ecosystem before merging changes into the main branch.
+// Deno Integration and Automation Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Deno automation system with:
+- Package automation workflows
+- CI/CD integration scripts
+- Task runners and builders
+- Testing frameworks
+- Documentation generators
+- Dependency management
+- Release automation
+- Monitoring tools
+
+// Project Structure
+src/
+  main.ts          # Entry point
+  automation/      # Automation scripts
+    workflows/     # CI/CD workflows
+    tasks/         # Task definitions
+    builders/      # Build scripts
+  scripts/         # Utility scripts
+    release/       # Release scripts
+    deploy/        # Deployment scripts
+  lib/             # Core libraries
+    utils/         # Utilities
+    testing/       # Test helpers
+  config/          # Configuration
+    ci/            # CI settings
+    defaults/      # Default configs
+  tests/           # Test suites
+    unit/          # Unit tests
+    integration/   # Integration tests
+
+// Development Guidelines
+1. Deno Patterns:
+   - Use TypeScript
+   - Implement permissions
+   - Handle async operations
+   - Use standard library
+   - Follow Deno conventions
+   - Use proper imports
+
+2. Automation Practices:
+   - Implement idempotency
+   - Handle errors gracefully
+   - Use proper logging
+   - Implement retries
+   - Handle timeouts
+   - Monitor progress
+
+3. Code Organization:
+   - Separate concerns
+   - Use modular design
+   - Implement testing
+   - Handle configuration
+   - Use proper typing
+   - Follow standards
+
+// Dependencies
+Core:
+- std: "^0.208.0"
+- deno_task_shell: "^0.10.0"
+- cliffy: "^1.0.0"
+- deno_dom: "^0.1.43"
+- oak: "^12.6.1"
+
+Optional:
+- fresh: "^1.6.0"
+- deno_cron: "^0.1.0"
+- deno_cache: "^0.5.0"
+- testing: "^0.208.0"
+
+// Code Examples:
+
+1. Task Runner Pattern:
+```typescript
+// automation/tasks/release.ts
+import { parse } from "std/flags/mod.ts";
+import { join } from "std/path/mod.ts";
+import { ensureDir } from "std/fs/mod.ts";
+
+interface ReleaseOptions {
+  version: string;
+  dryRun?: boolean;
+}
+
+export async function releasePackage(options: ReleaseOptions) {
+  const { version, dryRun = false } = options;
+  
+  try {
+    // Validate version format
+    if (!/^\d+\.\d+\.\d+$/.test(version)) {
+      throw new Error("Invalid version format");
+    }
+    
+    // Prepare release
+    await ensureDir("./dist");
+    
+    // Update version
+    const pkg = JSON.parse(
+      await Deno.readTextFile("./package.json")
+    );
+    pkg.version = version;
+    
+    if (!dryRun) {
+      await Deno.writeTextFile(
+        "./package.json",
+        JSON.stringify(pkg, null, 2)
+      );
+      
+      // Run build
+      await Deno.run({
+        cmd: ["deno", "task", "build"],
+      }).status();
+    }
+    
+    console.log(`Release ${version} prepared`);
+  } catch (error) {
+    console.error("Release failed:", error);
+    throw error;
+  }
+}
+```
+
+2. Workflow Pattern:
+```typescript
+// automation/workflows/ci.ts
+import { assertEquals } from "std/testing/asserts.ts";
+import { delay } from "std/async/mod.ts";
+
+interface WorkflowStep {
+  name: string;
+  run: () => Promise<void>;
+  retries?: number;
+}
+
+export class Workflow {
+  private steps: WorkflowStep[] = [];
+  
+  addStep(step: WorkflowStep) {
+    this.steps.push(step);
+  }
+  
+  async run() {
+    for (const step of this.steps) {
+      const { name, run, retries = 3 } = step;
+      let attempts = 0;
+      
+      while (attempts < retries) {
+        try {
+          console.log(`Running step: ${name}`);
+          await run();
+          break;
+        } catch (error) {
+          attempts++;
+          if (attempts === retries) {
+            throw new Error(
+              `Step ${name} failed after ${retries} attempts`
+            );
+          }
+          console.warn(
+            `Retry ${attempts}/${retries} for step ${name}`
+          );
+          await delay(1000 * attempts);
+        }
+      }
+    }
+  }
+}
+```
+
+3. Testing Pattern:
+```typescript
+// tests/integration/workflow_test.ts
+import {
+  assertEquals,
+  assertThrows,
+} from "std/testing/asserts.ts";
+import { Workflow } from "../../automation/workflows/ci.ts";
+
+Deno.test("Workflow execution", async () => {
+  const workflow = new Workflow();
+  const steps: string[] = [];
+  
+  workflow.addStep({
+    name: "step1",
+    run: async () => {
+      steps.push("step1");
+      await Promise.resolve();
+    },
+  });
+  
+  workflow.addStep({
+    name: "step2",
+    run: async () => {
+      steps.push("step2");
+      await Promise.resolve();
+    },
+  });
+  
+  await workflow.run();
+  
+  assertEquals(steps, ["step1", "step2"]);
+});
+
+Deno.test("Workflow error handling", async () => {
+  const workflow = new Workflow();
+  
+  workflow.addStep({
+    name: "failing-step",
+    run: async () => {
+      throw new Error("Step failed");
+    },
+    retries: 1,
+  });
+  
+  await assertThrows(
+    () => workflow.run(),
+    Error,
+    "Step failing-step failed after 1 attempts"
+  );
+});
+```
+
+// Best Practices:
+1. Use TypeScript strictly
+2. Implement proper error handling
+3. Use async/await properly
+4. Handle permissions correctly
+5. Implement proper logging
+6. Use proper testing
+7. Follow Deno standards
+8. Implement proper retries
+9. Use proper documentation
+10. Monitor performance
+
+// Security Considerations:
+1. Use proper permissions
+2. Handle secrets securely
+3. Validate inputs properly
+4. Use secure dependencies
+5. Implement proper logging
+6. Handle errors securely
+7. Use proper file access
+8. Implement proper auth
+9. Use proper networking
+10. Follow security updates

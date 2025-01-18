@@ -1,1 +1,411 @@
-You are an expert in Chrome Extension Development, JavaScript, TypeScript, HTML, CSS, Shadcn UI, Radix UI, Tailwind and Web APIs.Code Style and Structure:- Write concise, technical JavaScript/TypeScript code with accurate examples- Use modern JavaScript features and best practices- Prefer functional programming patterns; minimize use of classes- Use descriptive variable names (e.g., isExtensionEnabled, hasPermission)- Structure files: manifest.json, background scripts, content scripts, popup scripts, options pageNaming Conventions:- Use lowercase with underscores for file names (e.g., content_script.js, background_worker.js)- Use camelCase for function and variable names- Use PascalCase for class names (if used)TypeScript Usage:- Encourage TypeScript for type safety and better developer experience- Use interfaces for defining message structures and API responses- Leverage TypeScript's union types and type guards for runtime checksExtension Architecture:- Implement a clear separation of concerns between different extension components- Use message passing for communication between different parts of the extension- Implement proper state management using chrome.storage APIManifest and Permissions:- Use the latest manifest version (v3) unless there's a specific need for v2- Follow the principle of least privilege for permissions- Implement optional permissions where possibleSecurity and Privacy:- Implement Content Security Policy (CSP) in manifest.json- Use HTTPS for all network requests- Sanitize user inputs and validate data from external sources- Implement proper error handling and loggingUI and Styling:- Create responsive designs for popup and options pages- Use CSS Grid or Flexbox for layouts- Implement consistent styling across all extension UI elementsPerformance Optimization:- Minimize resource usage in background scripts- Use event pages instead of persistent background pages when possible- Implement lazy loading for non-critical extension features- Optimize content scripts to minimize impact on web page performanceBrowser API Usage:- Utilize chrome.* APIs effectively (e.g., chrome.tabs, chrome.storage, chrome.runtime)- Implement proper error handling for all API calls- Use chrome.alarms for scheduling tasks instead of setIntervalCross-browser Compatibility:- Use WebExtensions API for cross-browser support where possible- Implement graceful degradation for browser-specific featuresTesting and Debugging:- Utilize Chrome DevTools for debugging- Implement unit tests for core extension functionality- Use Chrome's built-in extension loading for testing during developmentContext-Aware Development:- Always consider the whole project context when providing suggestions or generating code- Avoid duplicating existing functionality or creating conflicting implementations- Ensure that new code integrates seamlessly with the existing project structure and architecture- Before adding new features or modifying existing ones, review the current project state to maintain consistency and avoid redundancy- When answering questions or providing solutions, take into account previously discussed or implemented features to prevent contradictions or repetitionsCode Output:- When providing code, always output the entire file content, not just new or modified parts- Include all necessary imports, declarations, and surrounding code to ensure the file is complete and functional- Provide comments or explanations for significant changes or additions within the file- If the file is too large to reasonably include in full, provide the most relevant complete section and clearly indicate where it fits in the larger file structureFollow Chrome Extension documentation for best practices, security guidelines, and API usage
+// Chrome Extension Development Guide (TypeScript)
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Chrome extension using TypeScript:
+- Browser action extensions
+- Content scripts
+- Background workers
+- Context menus
+- Storage management
+- API integrations
+- Message passing
+- OAuth authentication
+
+// Project Structure
+src/
+  background/     # Background scripts
+    index.ts      # Entry point
+    workers/      # Background workers
+  content/        # Content scripts
+    index.ts      # Entry point
+    styles/       # CSS styles
+  popup/          # Browser action UI
+    index.ts      # Entry point
+    components/   # UI components
+    styles/       # CSS styles
+  options/        # Options page
+    index.ts      # Entry point
+    components/   # UI components
+  shared/         # Shared code
+    types/        # Type definitions
+    utils/        # Utility functions
+    constants/    # Constants
+  manifest.json   # Extension manifest
+public/           # Static assets
+  icons/          # Icon files
+  html/           # HTML templates
+dist/             # Build output
+tests/            # Test suite
+docs/             # Documentation
+
+// Development Guidelines
+1. Extension Architecture:
+   - Use manifest V3
+   - Handle permissions
+   - Manage service workers
+   - Handle messaging
+   - Manage storage
+   - Handle events
+
+2. TypeScript Integration:
+   - Define types
+   - Use interfaces
+   - Handle async ops
+   - Type Chrome APIs
+   - Manage modules
+   - Handle errors
+
+3. Performance:
+   - Optimize loading
+   - Manage resources
+   - Handle memory
+   - Cache data
+   - Batch operations
+   - Profile code
+
+// Dependencies
+Core:
+- typescript: "^5.0.0"
+- @types/chrome: "^0.0.242"
+- webpack: "^5.88.0"
+- webpack-cli: "^5.1.0"
+- ts-loader: "^9.4.0"
+
+Optional:
+- jest: "^29.0.0"
+- @types/jest: "^29.0.0"
+- eslint: "^8.0.0"
+- prettier: "^2.8.0"
+
+// Code Examples:
+
+1. Background Service Worker:
+```typescript
+import { StorageService } from '../shared/services/storage';
+import { MessageTypes } from '../shared/types';
+
+// Initialize storage service
+const storage = new StorageService();
+
+// Handle extension installation
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason === 'install') {
+    await storage.initialize();
+    
+    // Set default settings
+    await chrome.storage.sync.set({
+      theme: 'light',
+      notifications: true,
+      autoSync: false
+    });
+  }
+});
+
+// Handle messages from content scripts
+chrome.runtime.onMessage.addListener(
+  (message: MessageTypes.Request, 
+   sender, 
+   sendResponse) => {
+    
+  switch (message.type) {
+    case 'FETCH_DATA':
+      handleDataFetch(message.payload)
+        .then(sendResponse)
+        .catch(error => sendResponse({ error }));
+      return true; // Will respond asynchronously
+      
+    case 'UPDATE_SETTINGS':
+      handleSettingsUpdate(message.payload)
+        .then(sendResponse)
+        .catch(error => sendResponse({ error }));
+      return true;
+  }
+});
+
+async function handleDataFetch(payload: any) {
+  try {
+    const data = await storage.getData(payload.key);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Data fetch error:', error);
+    throw new Error('Failed to fetch data');
+  }
+}
+
+async function handleSettingsUpdate(settings: any) {
+  try {
+    await chrome.storage.sync.set(settings);
+    return { success: true };
+  } catch (error) {
+    console.error('Settings update error:', error);
+    throw new Error('Failed to update settings');
+  }
+}
+```
+
+2. Content Script:
+```typescript
+import { DOMUtils } from '../shared/utils/dom';
+import { MessageTypes } from '../shared/types';
+
+class ContentScript {
+  private observer: MutationObserver;
+  private domUtils: DOMUtils;
+  
+  constructor() {
+    this.domUtils = new DOMUtils();
+    this.observer = new MutationObserver(
+      this.handleDOMChanges.bind(this)
+    );
+  }
+  
+  public initialize(): void {
+    // Start observing DOM changes
+    this.observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // Add message listeners
+    chrome.runtime.onMessage.addListener(
+      this.handleMessage.bind(this)
+    );
+    
+    // Initial page processing
+    this.processPage();
+  }
+  
+  private async processPage(): Promise<void> {
+    try {
+      const elements = this.domUtils.findRelevantElements();
+      
+      for (const element of elements) {
+        await this.processElement(element);
+      }
+      
+      // Notify background script
+      await chrome.runtime.sendMessage({
+        type: MessageTypes.PAGE_PROCESSED,
+        payload: {
+          url: window.location.href,
+          elementCount: elements.length
+        }
+      });
+    } catch (error) {
+      console.error('Page processing error:', error);
+    }
+  }
+  
+  private async processElement(
+    element: HTMLElement
+  ): Promise<void> {
+    // Add custom styling
+    element.classList.add('extension-processed');
+    
+    // Add event listeners
+    element.addEventListener('click', 
+      this.handleElementClick.bind(this)
+    );
+  }
+  
+  private handleDOMChanges(
+    mutations: MutationRecord[]
+  ): void {
+    for (const mutation of mutations) {
+      mutation.addedNodes.forEach(node => {
+        if (node instanceof HTMLElement) {
+          this.processElement(node);
+        }
+      });
+    }
+  }
+  
+  private handleMessage(
+    message: MessageTypes.Request,
+    sender: chrome.runtime.MessageSender,
+    sendResponse: (response: any) => void
+  ): void {
+    switch (message.type) {
+      case MessageTypes.UPDATE_ELEMENTS:
+        this.updateElements(message.payload)
+          .then(sendResponse)
+          .catch(error => sendResponse({ error }));
+        break;
+    }
+  }
+  
+  private async handleElementClick(
+    event: MouseEvent
+  ): Promise<void> {
+    const element = event.target as HTMLElement;
+    
+    try {
+      await chrome.runtime.sendMessage({
+        type: MessageTypes.ELEMENT_CLICKED,
+        payload: {
+          text: element.textContent,
+          href: element.getAttribute('href')
+        }
+      });
+    } catch (error) {
+      console.error('Click handling error:', error);
+    }
+  }
+}
+
+// Initialize content script
+const script = new ContentScript();
+script.initialize();
+```
+
+3. Popup Component:
+```typescript
+import { Settings } from '../shared/types';
+import { StorageService } from '../shared/services/storage';
+
+class PopupManager {
+  private storage: StorageService;
+  private settings: Settings;
+  
+  constructor() {
+    this.storage = new StorageService();
+    this.settings = {} as Settings;
+  }
+  
+  public async initialize(): Promise<void> {
+    try {
+      // Load settings
+      this.settings = await this.loadSettings();
+      
+      // Initialize UI
+      this.initializeUI();
+      
+      // Add event listeners
+      this.addEventListeners();
+    } catch (error) {
+      console.error('Popup initialization error:', error);
+      this.showError('Failed to initialize popup');
+    }
+  }
+  
+  private async loadSettings(): Promise<Settings> {
+    const result = await chrome.storage.sync.get([
+      'theme',
+      'notifications',
+      'autoSync'
+    ]);
+    
+    return {
+      theme: result.theme || 'light',
+      notifications: result.notifications ?? true,
+      autoSync: result.autoSync ?? false
+    };
+  }
+  
+  private initializeUI(): void {
+    // Set theme
+    document.body.classList.add(
+      `theme-${this.settings.theme}`
+    );
+    
+    // Update toggles
+    const notificationsToggle = document.getElementById(
+      'notifications-toggle'
+    ) as HTMLInputElement;
+    notificationsToggle.checked = this.settings.notifications;
+    
+    const autoSyncToggle = document.getElementById(
+      'auto-sync-toggle'
+    ) as HTMLInputElement;
+    autoSyncToggle.checked = this.settings.autoSync;
+  }
+  
+  private addEventListeners(): void {
+    // Theme selector
+    document.getElementById('theme-select')
+      ?.addEventListener('change', this.handleThemeChange.bind(this));
+    
+    // Toggle buttons
+    document.getElementById('notifications-toggle')
+      ?.addEventListener('change', this.handleToggleChange.bind(this));
+      
+    document.getElementById('auto-sync-toggle')
+      ?.addEventListener('change', this.handleToggleChange.bind(this));
+  }
+  
+  private async handleThemeChange(
+    event: Event
+  ): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const newTheme = select.value;
+    
+    try {
+      await chrome.storage.sync.set({ theme: newTheme });
+      document.body.className = `theme-${newTheme}`;
+    } catch (error) {
+      console.error('Theme update error:', error);
+      this.showError('Failed to update theme');
+    }
+  }
+  
+  private async handleToggleChange(
+    event: Event
+  ): Promise<void> {
+    const toggle = event.target as HTMLInputElement;
+    const setting = toggle.id.replace('-toggle', '');
+    
+    try {
+      await chrome.storage.sync.set({
+        [setting]: toggle.checked
+      });
+    } catch (error) {
+      console.error('Setting update error:', error);
+      this.showError('Failed to update setting');
+      toggle.checked = !toggle.checked; // Revert
+    }
+  }
+  
+  private showError(message: string): void {
+    const errorElement = document.getElementById('error-message');
+    if (errorElement) {
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+      
+      setTimeout(() => {
+        errorElement.style.display = 'none';
+      }, 3000);
+    }
+  }
+}
+
+// Initialize popup
+document.addEventListener('DOMContentLoaded', () => {
+  const popup = new PopupManager();
+  popup.initialize();
+});
+```
+
+// Best Practices:
+1. Use TypeScript features
+2. Follow Chrome guidelines
+3. Handle errors properly
+4. Implement security
+5. Write unit tests
+6. Document code
+7. Manage permissions
+8. Handle updates
+9. Optimize performance
+10. Follow web standards
+
+// Security Considerations:
+1. Validate messages
+2. Handle permissions
+3. Secure storage
+4. Sanitize content
+5. Use CSP
+6. Handle OAuth
+7. Protect user data
+8. Validate inputs
+9. Handle updates
+10. Monitor usage

@@ -1,62 +1,152 @@
-You are an expert in Python, FastAPI, and scalable API development.
+// FastAPI Expert Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-Key Principles
+// What you can build with this ruleset:
+A production-ready FastAPI application with:
+- Scalable and maintainable API architecture
+- Efficient async/await patterns
+- Type-safe request/response handling
+- Robust error management
+- Performance-optimized endpoints
+- Clean, functional programming style
 
-- Write concise, technical responses with accurate Python examples.
-- Use functional, declarative programming; avoid classes where possible.
-- Prefer iteration and modularization over code duplication.
-- Use descriptive variable names with auxiliary verbs (e.g., is_active, has_permission).
-- Use lowercase with underscores for directories and files (e.g., routers/user_routes.py).
-- Favor named exports for routes and utility functions.
-- Use the Receive an Object, Return an Object (RORO) pattern.
+// Project Structure
+src/
+  routers/           # Route handlers by domain
+    user_routes.py   # User routes
+    auth_routes.py   # Authentication routes
+  models/            # Pydantic models and schemas
+    domain/          # Domain models
+    schemas/         # Request/Response schemas
+  services/          # Business logic
+  utils/             # Shared utilities
+  middleware/        # Custom middleware
+  config/            # Configuration management
+  tests/             # Test suites
 
-Python/FastAPI
- - Use def for pure functions and async def for asynchronous operations.
- - Use type hints for all function signatures. Prefer Pydantic models over raw dictionaries for input validation.
- - File structure: exported router, sub-routes, utilities, static content, types (models, schemas).
- - Avoid unnecessary curly braces in conditional statements.
- - For single-line statements in conditionals, omit curly braces.
- - Use concise, one-line syntax for simple conditional statements (e.g., if condition: do_something()).
+// Development Guidelines
+1. Code Quality:
+   - Use functional, declarative programming over OOP
+   - Implement type hints for all function signatures
+   - Follow PEP 8 style guidelines
+   - Use descriptive variable names with auxiliary verbs
+   - Keep functions focused and small
+   - Prefer composition over inheritance
 
-Error Handling and Validation
- - Prioritize error handling and edge cases:
-  - Handle errors and edge cases at the beginning of functions.
-  - Use early returns for error conditions to avoid deeply nested if statements.
-  - Place the happy path last in the function for improved readability.
-  - Avoid unnecessary else statements; use the if-return pattern instead.
-  - Use guard clauses to handle preconditions and invalid states early.
-  - Implement proper error logging and user-friendly error messages.
-  - Use custom error types or error factories for consistent error handling.
+2. API Design:
+   - Use Pydantic models for request/response validation
+   - Implement clear endpoint naming conventions
+   - Structure routes logically by domain
+   - Use appropriate HTTP methods and status codes
+   - Version APIs explicitly when needed
+   - Document all endpoints with OpenAPI specs
 
-Dependencies
- - FastAPI
- - Pydantic v2
- - Async database libraries like asyncpg or aiomysql
- - SQLAlchemy 2.0 (if using ORM features)
+3. Error Handling:
+   - Handle errors at function entry points
+   - Use early returns to avoid nested conditionals
+   - Implement custom error types for domain-specific errors
+   - Provide clear, actionable error messages
+   - Log errors with appropriate context
+   - Use HTTPException for API errors
 
-FastAPI-Specific Guidelines
- - Use functional components (plain functions) and Pydantic models for input validation and response schemas.
- - Use declarative route definitions with clear return type annotations.
- - Use def for synchronous operations and async def for asynchronous ones.
- - Minimize @app.on_event("startup") and @app.on_event("shutdown"); prefer lifespan context managers for managing startup and shutdown events.
- - Use middleware for logging, error monitoring, and performance optimization.
- - Optimize for performance using async functions for I/O-bound tasks, caching strategies, and lazy loading.
- - Use HTTPException for expected errors and model them as specific HTTP responses.
- - Use middleware for handling unexpected errors, logging, and error monitoring.
- - Use Pydantic's BaseModel for consistent input/output validation and response schemas.
+4. Performance:
+   - Use async operations for I/O-bound tasks
+   - Implement caching strategies
+   - Optimize database queries
+   - Use connection pooling
+   - Implement proper indexing
+   - Monitor and optimize response times
 
-Performance Optimization
- - Minimize blocking I/O operations; use asynchronous operations for all database calls and external API requests.
- - Implement caching for static and frequently accessed data using tools like Redis or in-memory stores.
- - Optimize data serialization and deserialization with Pydantic.
- - Use lazy loading techniques for large datasets and substantial API responses.
+// Dependencies
+Core:
+- FastAPI
+- Pydantic v2
+- SQLAlchemy 2.0
+- asyncpg/aiomysql
+- uvicorn
+- python-jose[cryptography]
+- passlib[bcrypt]
 
-Key Conventions
- 1. Rely on FastAPI’s dependency injection system for managing state and shared resources.
- 2. Prioritize API performance metrics (response time, latency, throughput).
- 3. Limit blocking operations in routes:
-   - Favor asynchronous and non-blocking flows.
-   - Use dedicated async functions for database and external API operations.
-   - Structure routes and dependencies clearly to optimize readability and maintainability.
+Optional:
+- Redis (caching)
+- Celery (background tasks)
+- Prometheus (metrics)
+- Sentry (error tracking)
 
-Refer to FastAPI documentation for Data Models, Path Operations, and Middleware for best practices.
+// Code Examples:
+
+1. Route Definition Pattern:
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+from pydantic import BaseModel
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(user_id: int, db: Database = Depends(get_db)):
+    if not (user := await db.users.get(user_id)):
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+```
+
+2. Error Handling Pattern:
+```python
+from fastapi import HTTPException
+from typing import Optional
+
+async def get_user_or_404(user_id: int, db: Database) -> User:
+    # Early return pattern
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+    
+    if not (user := await db.users.get(user_id)):
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user
+```
+
+3. Dependency Injection Pattern:
+```python
+from fastapi import Depends
+from typing import AsyncGenerator
+
+async def get_db() -> AsyncGenerator[Database, None]:
+    async with Database() as db:
+        yield db
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Database = Depends(get_db)
+) -> User:
+    return await validate_token_and_get_user(token, db)
+```
+
+// Best Practices:
+1. Use dependency injection for shared resources
+2. Implement proper connection pooling
+3. Use async context managers for resource cleanup
+4. Implement proper request validation
+5. Use appropriate status codes
+6. Implement proper logging
+7. Use proper error handling
+8. Implement proper caching
+9. Use proper security measures
+10. Implement proper testing
+
+// Security Considerations:
+1. Implement proper authentication
+2. Use proper authorization
+3. Implement rate limiting
+4. Use CORS properly
+5. Implement proper input validation
+6. Use secure headers
+7. Implement proper logging
+8. Use proper error handling
+9. Implement proper security headers
+10. Use proper SSL/TLS

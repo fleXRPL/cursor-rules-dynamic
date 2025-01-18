@@ -1,83 +1,237 @@
-{
-    "role": "Blender VSCode Development Expert",
-    "rules": [
-        {
-            "name": "Project Structure",
-            "patterns": [
-                "Ensure addon has a folder structure with __init__.py as the main entry point",
-                "Support both legacy addons and new Extensions (Blender 4.2+)",
-                "Place addon files in bpy.utils.user_resource('SCRIPTS', path='addons')",
-                "Place extensions in bpy.utils.user_resource('EXTENSIONS', path='vscode_development')"
-            ]
-        },
-        {
-            "name": "Code Organization",
-            "patterns": [
-                "Implement proper register() and unregister() methods for addon reloading",
-                "Use #context.area comments for specific Blender area targeting (e.g., #context.area: VIEW_3D)",
-                "Handle command line arguments via sys.argv when specified",
-                "Support both single-file and multi-file addon structures"
-            ]
-        },
-        {
-            "name": "Development Environment",
-            "patterns": [
-                "Set BLENDER_USER_RESOURCES for isolated development environment",
-                "Support Multi-root Workspaces for multiple addon development",
-                "Enable debugging with justMyCode setting",
-                "Handle factory startup configurations"
-            ]
-        },
-        {
-            "name": "Version Compatibility",
-            "patterns": [
-                "Support Blender versions 2.8.34 and newer",
-                "Handle both legacy addons and Blender 4.2+ Extensions",
-                "Use version-specific API features appropriately",
-                "Implement proper version checks in code"
-            ]
-        },
-        {
-            "name": "Best Practices",
-            "patterns": [
-                "Use soft links/junctions for addon development paths",
-                "Implement proper error handling for addon operations",
-                "Support reload functionality through register/unregister",
-                "Follow Blender's Python API conventions"
-            ]
-        },
-        {
-            "name": "Environment Variables",
-            "patterns": [
-                "Handle BLENDER_USER_RESOURCES for user files",
-                "Support BLENDER_USER_CONFIG for configuration",
-                "Handle BLENDER_USER_SCRIPTS for scripts",
-                "Support BLENDER_USER_EXTENSIONS for extensions",
-                "Handle BLENDER_USER_DATAFILES for data files"
-            ]
-        }
-    ],
-    "file_patterns": {
-        "include": [
-            "*.py",
-            "__init__.py",
-            "setup.cfg",
-            "pyproject.toml"
+// Blender VSCode Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A Blender Python addon development environment in VSCode:
+- Professional Blender addons
+- Custom operators and panels
+- Property groups and UI
+- Custom mesh operations
+- Scene manipulation tools
+- Material/shader tools
+- Animation utilities
+- Asset management tools
+
+// Project Structure
+addon_name/
+  __init__.py         # Addon registration
+  operators/          # Custom operators
+    __init__.py       # Operator registration
+    mesh_ops.py       # Mesh operations
+    object_ops.py     # Object operations
+  ui/                 # User interface
+    __init__.py       # UI registration
+    panels.py         # Panel definitions
+    menus.py          # Menu definitions
+  properties/         # Property definitions
+    __init__.py       # Property registration
+    settings.py       # Property settings
+  utils/              # Utility functions
+    __init__.py       # Utility registration
+    mesh_utils.py     # Mesh utility functions
+    material_utils.py # Material utility functions
+  lib/                # External libraries
+  tests/              # Test suite
+  docs/               # Documentation
+  .vscode/            # VSCode settings
+    settings.json     # VSCode settings
+    launch.json       # Debugger configuration
+
+// Development Guidelines
+1. Blender Integration:
+   - Register operators
+   - Define properties
+   - Create UI elements
+   - Handle preferences
+   - Manage scene data
+   - Handle undo/redo
+
+2. VSCode Setup:
+   - Configure debugger
+   - Set Python path
+   - Enable linting
+   - Setup keybindings
+   - Configure tasks
+   - Handle extensions
+
+3. Performance:
+   - Optimize mesh ops
+   - Handle large data
+   - Manage memory
+   - Profile code
+   - Batch operations
+   - Use modifiers
+
+// Dependencies
+Core:
+- python>=3.10.0
+- fake-bpy-module>=4.0.0
+- pylint>=2.17.0
+- black>=23.3.0
+- mypy>=1.3.0
+
+Optional:
+- pytest>=7.3.1
+- sphinx>=7.0.0
+- blender-addon-tester>=0.5.0
+- coverage>=7.2.0
+
+// Code Examples:
+
+1. Operator Pattern:
+```python
+import bpy
+from bpy.types import Operator
+from bpy.props import FloatProperty, BoolProperty
+from typing import Set
+
+class CUSTOM_OT_mesh_operator(Operator):
+    """Tooltip for this operator"""
+    bl_idname = "custom.mesh_operator"
+    bl_label = "Custom Mesh Operator"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    threshold: FloatProperty(
+        name="Threshold",
+        description="Operation threshold",
+        default=0.5,
+        min=0.0,
+        max=1.0
+    )
+    
+    preserve_uv: BoolProperty(
+        name="Preserve UVs",
+        description="Preserve UV coordinates",
+        default=True
+    )
+    
+    @classmethod
+    def poll(cls, context):
+        return context.active_object and context.active_object.type == 'MESH'
+    
+    def execute(self, context):
+        obj = context.active_object
+        mesh = obj.data
+        
+        # Perform mesh operations here
+        # Example: Simple vertex manipulation
+        for vertex in mesh.vertices:
+            if vertex.co.z > self.threshold:
+                vertex.co.z *= 1.5
+        
+        mesh.update()
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+    
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "threshold")
+        layout.prop(self, "preserve_uv")
+```
+
+2. Panel Pattern:
+```python
+import bpy
+from bpy.types import Panel
+
+class CUSTOM_PT_main_panel(Panel):
+    bl_label = "Custom Tools"
+    bl_idname = "CUSTOM_PT_main_panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Tool'
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        
+        # Draw operator buttons
+        row = layout.row()
+        row.operator("custom.mesh_operator")
+        
+        # Draw property fields
+        box = layout.box()
+        box.label(text="Settings")
+        box.prop(scene, "custom_property")
+        
+        # Draw conditional elements
+        if context.active_object:
+            box = layout.box()
+            box.label(text="Object Tools")
+            box.operator("custom.object_operator")
+```
+
+3. Property Group Pattern:
+```python
+import bpy
+from bpy.types import PropertyGroup
+from bpy.props import (
+    FloatProperty,
+    EnumProperty,
+    StringProperty,
+    CollectionProperty
+)
+
+class CustomSettings(PropertyGroup):
+    resolution: EnumProperty(
+        name="Resolution",
+        description="Output resolution",
+        items=[
+            ('LOW', "Low", "Low resolution", 1),
+            ('MED', "Medium", "Medium resolution", 2),
+            ('HIGH', "High", "High resolution", 3),
         ],
-        "exclude": [
-            "__pycache__",
-            "*.pyc",
-            "*.pyo",
-            ".git",
-            ".vscode",
-            ".idea"
-        ]
-    },
-    "context": {
-        "title": "Blender VSCode Development Rules",
-        "description": "Rules for developing Blender addons and extensions using VSCode",
-        "documentation": "https://github.com/JacquesLucke/blender_vscode",
-        "blender_version_min": "2.8.34",
-        "vscode_requirements": ["Python extension", "Blender VSCode extension"]
-    }
-} 
+        default='MED'
+    )
+    
+    export_path: StringProperty(
+        name="Export Path",
+        description="Path for exported files",
+        default="//exports",
+        subtype='DIR_PATH'
+    )
+    
+    smoothing_factor: FloatProperty(
+        name="Smoothing",
+        description="Mesh smoothing factor",
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        precision=3
+    )
+
+def register():
+    bpy.utils.register_class(CustomSettings)
+    bpy.types.Scene.custom_settings = \
+        bpy.props.PointerProperty(type=CustomSettings)
+
+def unregister():
+    del bpy.types.Scene.custom_settings
+    bpy.utils.unregister_class(CustomSettings)
+```
+
+// Best Practices:
+1. Use type hints
+2. Follow Blender conventions
+3. Handle undo/redo
+4. Document code
+5. Write unit tests
+6. Manage dependencies
+7. Handle errors
+8. Use property definitions
+9. Follow naming conventions
+10. Optimize performance
+
+// Security Considerations:
+1. Validate user input
+2. Handle file operations
+3. Manage permissions
+4. Check file paths
+5. Handle external data
+6. Validate scripts
+7. Secure preferences
+8. Handle crashes
+9. Version compatibility
+10. Resource management

@@ -1,0 +1,461 @@
+// HTML, CSS, and JavaScript Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern web application using HTML, CSS, and JavaScript:
+- Responsive layouts
+- Interactive UI components
+- Form validation
+- DOM manipulation
+- AJAX requests
+- CSS animations
+- Local storage
+- Web APIs
+
+// Project Structure
+project/
+  src/           # Source files
+    index.html   # Main HTML file
+    css/         # Stylesheets
+      main.css   # Main styles
+      reset.css  # CSS reset
+      utils.css  # Utility classes
+    js/          # JavaScript files
+      main.js    # Main script
+      utils.js   # Utility functions
+      api.js     # API calls
+    assets/      # Static assets
+      images/    # Image files
+      fonts/     # Font files
+  dist/          # Production build
+  tests/         # Test suite
+    unit/        # Unit tests
+    e2e/         # End-to-end tests
+
+// Development Guidelines
+1. HTML Structure:
+   - Semantic markup
+   - Accessibility
+   - Meta tags
+   - Open Graph
+   - Schema.org
+   - Performance
+
+2. CSS Organization:
+   - BEM methodology
+   - Mobile-first
+   - CSS variables
+   - Flexbox/Grid
+   - Media queries
+   - Animations
+
+3. JavaScript Best Practices:
+   - ES6+ features
+   - Modules
+   - Event handling
+   - Error handling
+   - Performance
+   - Testing
+
+// Dependencies
+Core:
+- normalize.css: "^8.0.1"
+- font-awesome: "^6.4.0"
+
+Optional:
+- axios: "^1.4.0"
+- lodash: "^4.17.21"
+- jest: "^29.5.0"
+- cypress: "^12.14.0"
+
+// Code Examples:
+
+1. HTML Pattern:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your site description">
+    <meta property="og:title" content="Your site title">
+    <meta property="og:description" content="Your site description">
+    <meta property="og:image" content="path/to/image.jpg">
+    <title>Your Site Title</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <ul class="nav__list">
+                <li class="nav__item">
+                    <a href="#" class="nav__link">Home</a>
+                </li>
+                <li class="nav__item">
+                    <a href="#" class="nav__link">About</a>
+                </li>
+                <li class="nav__item">
+                    <a href="#" class="nav__link">Contact</a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="hero">
+            <h1 class="hero__title">Welcome to our site</h1>
+            <p class="hero__text">Lorem ipsum dolor sit amet</p>
+            <button class="hero__cta">Get Started</button>
+        </section>
+
+        <section class="features">
+            <article class="feature">
+                <h2 class="feature__title">Feature 1</h2>
+                <p class="feature__text">Description</p>
+            </article>
+            <!-- More features -->
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p class="footer__text">&copy; 2023 Your Company</p>
+    </footer>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
+```
+
+2. CSS Pattern:
+```css
+/* Variables */
+:root {
+    --color-primary: #007bff;
+    --color-secondary: #6c757d;
+    --color-success: #28a745;
+    --color-danger: #dc3545;
+    --font-primary: 'Arial', sans-serif;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 2rem;
+}
+
+/* Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Typography */
+body {
+    font-family: var(--font-primary);
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+/* Components */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav__list {
+    display: flex;
+    list-style: none;
+    gap: var(--spacing-md);
+}
+
+.nav__link {
+    text-decoration: none;
+    color: var(--color-primary);
+    transition: color 0.3s ease;
+}
+
+.nav__link:hover {
+    color: var(--color-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nav {
+        flex-direction: column;
+    }
+
+    .nav__list {
+        margin-top: var(--spacing-md);
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+```
+
+3. JavaScript Pattern:
+```javascript
+// Config
+const config = {
+    apiUrl: 'https://api.example.com',
+    storageKey: 'app_data',
+    debounceTime: 300
+};
+
+// Utils
+const utils = {
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+
+    formatDate(date) {
+        return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(new Date(date));
+    },
+
+    storage: {
+        set(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+            }
+        },
+
+        get(key) {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : null;
+            } catch (error) {
+                console.error('Error reading from localStorage:', error);
+                return null;
+            }
+        }
+    }
+};
+
+// API Service
+class ApiService {
+    constructor(baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    async get(endpoint) {
+        try {
+            const response = await fetch(`${this.baseUrl}${endpoint}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+
+    async post(endpoint, data) {
+        try {
+            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error('Network response was not ok');
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+}
+
+// Form Handler
+class FormHandler {
+    constructor(formElement) {
+        this.form = formElement;
+        this.init();
+    }
+
+    init() {
+        this.form.addEventListener('submit', this.handleSubmit.bind(this));
+        this.form.addEventListener('input', utils.debounce(
+            this.handleInput.bind(this),
+            config.debounceTime
+        ));
+    }
+
+    handleSubmit(event) {
+        event.preventDefault();
+        if (this.validateForm()) {
+            const formData = new FormData(this.form);
+            const data = Object.fromEntries(formData.entries());
+            this.submitForm(data);
+        }
+    }
+
+    handleInput(event) {
+        const field = event.target;
+        this.validateField(field);
+    }
+
+    validateField(field) {
+        const value = field.value;
+        let isValid = true;
+        let errorMessage = '';
+
+        switch (field.type) {
+            case 'email':
+                isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+                errorMessage = 'Please enter a valid email address';
+                break;
+            case 'password':
+                isValid = value.length >= 8;
+                errorMessage = 'Password must be at least 8 characters long';
+                break;
+            // Add more validation cases
+        }
+
+        this.showFieldError(field, isValid ? '' : errorMessage);
+        return isValid;
+    }
+
+    validateForm() {
+        const fields = this.form.querySelectorAll('input, select, textarea');
+        let isValid = true;
+
+        fields.forEach(field => {
+            if (!this.validateField(field)) {
+                isValid = false;
+            }
+        });
+
+        return isValid;
+    }
+
+    showFieldError(field, message) {
+        const errorElement = field.nextElementSibling;
+        if (errorElement && errorElement.classList.contains('error-message')) {
+            errorElement.textContent = message;
+            field.classList.toggle('invalid', message !== '');
+        }
+    }
+
+    async submitForm(data) {
+        try {
+            const api = new ApiService(config.apiUrl);
+            const response = await api.post('/submit', data);
+            this.handleSuccess(response);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    handleSuccess(response) {
+        // Handle successful submission
+        console.log('Form submitted successfully:', response);
+    }
+
+    handleError(error) {
+        // Handle submission error
+        console.error('Form submission error:', error);
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => new FormHandler(form));
+});
+```
+
+// Best Practices:
+1. HTML:
+   - Semantic elements
+   - Accessibility (ARIA)
+   - Valid markup
+   - Meta tags
+   - Performance
+   - SEO optimization
+
+2. CSS:
+   - BEM naming
+   - Mobile-first
+   - CSS variables
+   - Flexbox/Grid
+   - Performance
+   - Maintainability
+
+3. JavaScript:
+   - ES6+ features
+   - Modules
+   - Error handling
+   - Performance
+   - Testing
+   - Documentation
+
+4. Security:
+   - XSS prevention
+   - CSRF protection
+   - Content Security
+   - Input validation
+   - Secure storage
+   - HTTPS usage
+
+// Security Considerations:
+1. Client-side:
+   - Input validation
+   - XSS prevention
+   - CSRF tokens
+   - Secure storage
+   - API security
+   - Error handling
+
+2. Data Security:
+   - Form validation
+   - Data encryption
+   - Access control
+   - Session handling
+   - Error messages
+   - Logging
+
+3. Infrastructure:
+   - HTTPS
+   - CORS
+   - Headers
+   - Caching
+   - Monitoring
+   - Backups 

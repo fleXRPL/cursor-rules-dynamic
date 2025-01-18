@@ -1,1 +1,246 @@
-you are an expert game designer and game programmer, you will choose the best game design and coding practices for all decisions in this project. The game is based on a 10x10 grid, each square has a 10x10 grid inside of it. There must be random map generation that smartly calculates where resources are located and how the map is generated. The player does not control anything in the game the player is simply an observer, therefore there should be logs for almost everything in the game and it should be turn based.All nations should operate the same, their capabilites should be balanced. The player should be able to see the entire map at once, and the player should be able to see the entire history of the game in the logs. There should be a way to zoom in on a specific square to see more detail.Nations should be able to trade resources with each other. Nations should be able to go to war with each other. Nations should be able to make peace with each other.The time period of the game is constant and there is no technological tree. It takes place in ancient times.nations should spawn a minimum distance away from eachotherthe entire game should be colored ASCII based in terms of graphicsThere should be neutral land that can be claimed by any nation. Neutral land should be randomly generated each game.There should be a way to view the current owner of a square.There should be a way to view the current resources of a square.value of resources should be based on their rarity throughout the entire map. nations can use gold to either buy resources or armies.armies are the primary way that nations can expand their territory.there should be no talent tree or technology tree, nations should be balanced without the need for such a treepopulation should collect in towns and citiesroads should connect towns and citiesresources are spread throughout nations through roadsnations attempt to spread their resources evenly over their territorygold is not omni present and must be transported using roadsto the location where it is spent to build armies or develop landoceans should be randomly generated to separate continentsrivers should be randomly generated to connect oceans and flow across the map vertically or horizontallyrivers are a food source for the land and farms can be built on themmountains should be randomly generated throughout the mapmountains should be impassable by armiesmines in mountains provide metal at 20% efficiencyNations should expand towards resources that they have a low amount of of and away from resources that they have a high amount ofarmies should spawn at the town or city that issued the ordertowns can only spawn a max level 3 armytowns have a 3 square radius for gathering resourcesas towns grow their radius grows, there are 3 levels of towns and citiesa Nation's largest city is its capitalpopulation can only live in towns and citiesresources should be spread throughout the map in a way that encourages nations to expand into new squaresarmies can travel across oceans at .25x speedarmies can travel on rivers to move across the map at 3x speedthere is a "battle list" that shows all the battles that have happened and stats about themarmies go from level 1 to level 10 based on their fundinginner squares can be developed into farms, forests, minesarmies require wood, food, and metal to be created.nations must pay upkeep depending on the amount of armies and developed land they havebattles are resolved by the difference in army level and a RISK esque dice roll mechanic that is effected by army levelarmies can build castles that are good defensively and allow for funding of armiesarmies can be used to conquer squares from other nationsarmies can be used to defend squares from other nationsarmies can be used to attack other nationsarmies can be used to attack neutral squaresarmies can be used to attack other nations squaresarmies can be used to attack neutral squaresarmies can be used to attack other nations squaresarmies can be used to attack neutral squaresnations should start with the same amount of gold and landthe map should be color coded to show the owner of the squarethere should be effects over the screen that mimic a CRT monitorthe game should aim to be similar to Conway's Game of Life where the nations are the living organisms.like conway's game of life, nations should be able to "see" eachother and react to eachotherlike conway's game of life, the nations should be able to "see" the resources and react to themthere should be a chart page that tracks just about everything that can be tracked in the game
+// ASCII Simulation Game Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A text-based simulation game using ASCII characters:
+- Dynamic game world representation
+- Real-time or turn-based gameplay
+- Entity movement and collision
+- Game state management
+- Event handling system
+- Save/load functionality
+- Custom ASCII graphics
+- Terminal-based UI
+
+// Project Structure
+src/
+  core/           # Core game engine
+    engine.py     # Main game loop
+    world.py      # World management
+    entity.py     # Entity system
+    events.py     # Event handling
+  graphics/       # ASCII rendering
+    renderer.py   # ASCII renderer
+    sprites.py    # ASCII sprite definitions
+    colors.py     # Color management
+  input/          # Input handling
+    keyboard.py   # Keyboard input
+    commands.py   # Command processing
+  game/           # Game specific
+    entities/     # Game entities
+    states/       # Game states
+    rules/        # Game rules
+    ai/           # AI behavior
+  utils/          # Utilities
+    logger.py     # Logging
+    config.py     # Configuration
+  data/           # Game data
+    maps/         # World maps
+    saves/        # Save files
+  tests/          # Test suite
+
+// Development Guidelines
+1. ASCII Graphics:
+   - Use consistent character sets
+   - Define clear sprite patterns
+   - Handle color codes properly
+   - Manage screen buffer
+   - Handle terminal sizes
+   - Support different terminals
+
+2. Game Engine:
+   - Implement game loop
+   - Handle state updates
+   - Process input events
+   - Manage entities
+   - Handle collisions
+   - Control game speed
+
+3. Performance:
+   - Optimize rendering
+   - Minimize screen updates
+   - Efficient collision checks
+   - Memory management
+   - Buffer optimization
+   - Handle large worlds
+
+// Dependencies
+Core:
+- python>=3.8.0
+- blessed>=1.19.0
+- numpy>=1.21.0
+- pyyaml>=6.0.0
+- attrs>=21.4.0
+
+Optional:
+- pytest>=7.0.0
+- mypy>=0.950
+- black>=22.3.0
+- flake8>=4.0.0
+
+// Code Examples:
+
+1. Game Engine Pattern:
+```python
+from typing import List, Dict, Optional
+from dataclasses import dataclass
+import blessed
+import time
+
+@dataclass
+class Entity:
+    x: int
+    y: int
+    symbol: str
+    color: str
+
+class GameEngine:
+    def __init__(self, width: int, height: int):
+        self.term = blessed.Terminal()
+        self.width = width
+        self.height = height
+        self.entities: List[Entity] = []
+        self.running = False
+        
+    def add_entity(self, entity: Entity) -> None:
+        self.entities.append(entity)
+        
+    def update(self) -> None:
+        for entity in self.entities:
+            self._update_entity(entity)
+            
+    def render(self) -> None:
+        with self.term.fullscreen(), self.term.hidden_cursor():
+            output = self._create_buffer()
+            print(self.term.home + output)
+            
+    def _update_entity(self, entity: Entity) -> None:
+        # Update entity logic here
+        pass
+        
+    def _create_buffer(self) -> str:
+        buffer = [[' ' for _ in range(self.width)] 
+                 for _ in range(self.height)]
+        
+        for entity in self.entities:
+            if 0 <= entity.x < self.width and 0 <= entity.y < self.height:
+                buffer[entity.y][entity.x] = entity.symbol
+                
+        return '\n'.join(''.join(row) for row in buffer)
+        
+    def run(self) -> None:
+        self.running = True
+        while self.running:
+            self.update()
+            self.render()
+            time.sleep(1/30)  # 30 FPS
+```
+
+2. Input Handler Pattern:
+```python
+from typing import Callable, Dict
+from blessed import Terminal
+from dataclasses import dataclass
+
+@dataclass
+class InputCommand:
+    key: str
+    description: str
+    handler: Callable[[], None]
+
+class InputHandler:
+    def __init__(self, terminal: Terminal):
+        self.term = terminal
+        self.commands: Dict[str, InputCommand] = {}
+        
+    def register_command(self, command: InputCommand) -> None:
+        self.commands[command.key] = command
+        
+    def handle_input(self) -> None:
+        with self.term.cbreak():
+            key = self.term.inkey(timeout=0.1)
+            if key.name in self.commands:
+                self.commands[key.name].handler()
+                
+    def get_help(self) -> str:
+        return '\n'.join(
+            f'{cmd.key}: {cmd.description}'
+            for cmd in self.commands.values()
+        )
+```
+
+3. ASCII Renderer Pattern:
+```python
+from typing import List, Dict, Tuple
+from dataclasses import dataclass
+import blessed
+
+@dataclass
+class Sprite:
+    chars: List[str]
+    color: str
+    transparent_char: str = ' '
+
+class ASCIIRenderer:
+    def __init__(self, terminal: blessed.Terminal):
+        self.term = terminal
+        self.sprites: Dict[str, Sprite] = {}
+        self.buffer: List[List[Tuple[str, str]]] = []
+        
+    def register_sprite(self, name: str, sprite: Sprite) -> None:
+        self.sprites[name] = sprite
+        
+    def draw_sprite(self, name: str, x: int, y: int) -> None:
+        if name not in self.sprites:
+            return
+            
+        sprite = self.sprites[name]
+        for dy, row in enumerate(sprite.chars):
+            for dx, char in enumerate(row):
+                if char != sprite.transparent_char:
+                    self._set_buffer(
+                        x + dx, 
+                        y + dy, 
+                        char, 
+                        sprite.color
+                    )
+                    
+    def _set_buffer(self, x: int, y: int, char: str, color: str) -> None:
+        if (0 <= y < len(self.buffer) and 
+            0 <= x < len(self.buffer[0])):
+            self.buffer[y][x] = (char, color)
+            
+    def render(self) -> str:
+        output = []
+        for row in self.buffer:
+            line = []
+            for char, color in row:
+                colored_char = getattr(self.term, color)(char)
+                line.append(colored_char)
+            output.append(''.join(line))
+        return '\n'.join(output)
+```
+
+// Best Practices:
+1. Use type hints
+2. Handle terminal resizing
+3. Implement proper cleanup
+4. Use efficient data structures
+5. Handle input gracefully
+6. Manage game state
+7. Document code
+8. Write unit tests
+9. Handle errors
+10. Optimize performance
+
+// Security Considerations:
+1. Validate user input
+2. Handle file operations safely
+3. Manage game saves securely
+4. Control resource usage
+5. Handle terminal signals
+6. Protect game state
+7. Validate configuration
+8. Handle crashes gracefully
+9. Secure random generation
+10. Manage permissions

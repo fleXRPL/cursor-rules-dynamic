@@ -1,1 +1,237 @@
-{  "rules": {   "commit_message_guidelines": {    "description": "Guidelines for creating conventional commit messages.",    "format": {     "description": "The format for commit messages using the conventional commits spec.",     "body": "[optional scope]: \n\n[optional body]\n\n[optional footer(s)]"    },    "enabled": true,    "rules": [     {      "description": "Always suggest a conventional commit with a type and optional scope in lowercase letters."     },     {      "description": "Keep the commit message concise and within 60 characters."     },     {      "description": "Ensure the commit message is ready to be pasted into the terminal without further editing."     },     {      "description": "Provide the full command to commit, not just the message."     }    ],    "examples": [     {      "prompt": "<diff_context> /commit",      "response": "git commit -m 'feat: add responsive navbar with TailwindCSS'"     }    ]   },   "development_guidelines": {    "description": "Guidelines for developing code with Astro, TypeScript, and TailwindCSS.",    "enabled": true,    "rules": [     {      "description": "Enforce strict TypeScript settings, ensuring type safety across the project."     },     {      "description": "Use TailwindCSS for all styling, keeping the utility-first approach in mind."     },     {      "description": "Ensure Astro components are modular, reusable, and maintain a clear separation of concerns."     }    ]   },   "coding_style": {    "description": "Guidelines for maintaining consistent coding style.",    "enabled": true,    "rules": [     {      "description": "Code must start with path/filename as a one-line comment."     },     {      "description": "Comments should describe purpose, not effect."     },     {      "description": "Prioritize modularity, DRY principles, and performance."     }    ]   },   "custom_slash_commands": {    "description": "Custom slash commands.",    "enabled": true,    "commands": [     {      "name": "/commit",      "description": "Generate a Git commit message using the conventional commits spec.",      "enabled": true     }    ]   }  } }
+// Astro TypeScript Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern web application using Astro and TypeScript:
+- Static site generation (SSG)
+- Server-side rendering (SSR)
+- Hybrid rendering
+- Content collections
+- Dynamic routing
+- API endpoints
+- Markdown/MDX integration
+- Performance optimization
+
+// Project Structure
+src/
+  components/     # UI components
+    common/       # Shared components
+    layouts/      # Layout components
+    islands/      # Interactive components
+  content/        # Content collections
+    blog/         # Blog posts
+    docs/         # Documentation
+  pages/          # Route pages
+    api/          # API endpoints
+    blog/         # Blog routes
+  styles/         # Global styles
+    base/         # Base styles
+    utils/        # Utility styles
+  utils/          # Utility functions
+  types/          # TypeScript types
+  config/         # Configuration
+public/           # Static assets
+  images/         # Image files
+  fonts/          # Font files
+
+// Development Guidelines
+1. Astro Components:
+   - Use .astro extension
+   - Implement frontmatter
+   - Handle props properly
+   - Manage client directives
+   - Use slots effectively
+   - Handle hydration
+
+2. TypeScript Integration:
+   - Define proper types
+   - Use type inference
+   - Handle props typing
+   - Manage content types
+   - Use utility types
+   - Handle API types
+
+3. Performance:
+   - Optimize images
+   - Minimize JavaScript
+   - Use partial hydration
+   - Implement caching
+   - Handle prefetching
+   - Optimize builds
+
+// Dependencies
+Core:
+- astro: "^3.0.0"
+- typescript: "^5.0.0"
+- @astrojs/ts-plugin: "^1.0.0"
+- @astrojs/mdx: "^1.0.0"
+- @astrojs/image: "^1.0.0"
+
+Optional:
+- prettier: "^2.8.0"
+- eslint: "^8.0.0"
+- @typescript-eslint/parser: "^5.0.0"
+- vitest: "^0.34.0"
+
+// Code Examples:
+
+1. Component Pattern:
+```astro
+---
+import { Image } from '@astrojs/image/components';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  featured?: boolean;
+}
+
+const { post, featured = false } = Astro.props;
+const { title, description, pubDate, image } = post.data;
+---
+
+<article class:list={['post-card', { featured }]}>
+  {image && (
+    <Image
+      src={image}
+      alt={title}
+      width={800}
+      height={400}
+      format="webp"
+      loading="lazy"
+    />
+  )}
+  <div class="content">
+    <h2>{title}</h2>
+    <p>{description}</p>
+    <time datetime={pubDate.toISOString()}>
+      {pubDate.toLocaleDateString()}
+    </time>
+    <slot />
+  </div>
+</article>
+
+<style>
+  .post-card {
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    background: var(--surface-1);
+  }
+  
+  .post-card.featured {
+    border: 2px solid var(--accent);
+  }
+  
+  .content {
+    margin-top: 1rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    margin: 0;
+  }
+  
+  time {
+    color: var(--text-2);
+    font-size: 0.875rem;
+  }
+</style>
+```
+
+2. API Endpoint Pattern:
+```typescript
+import type { APIRoute } from 'astro';
+import { getCollection } from 'astro:content';
+
+export interface Post {
+  id: string;
+  title: string;
+  description: string;
+  pubDate: Date;
+}
+
+export const get: APIRoute = async ({ params, request }) => {
+  try {
+    const posts = await getCollection('blog');
+    const formattedPosts: Post[] = posts.map(post => ({
+      id: post.id,
+      title: post.data.title,
+      description: post.data.description,
+      pubDate: post.data.pubDate
+    }));
+    
+    return new Response(JSON.stringify(formattedPosts), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      message: 'Failed to fetch posts'
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+};
+```
+
+3. Content Collection Pattern:
+```typescript
+import { z, defineCollection } from 'astro:content';
+
+const blogCollection = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    pubDate: z.date(),
+    author: z.string(),
+    image: z.string().optional(),
+    tags: z.array(z.string()),
+    draft: z.boolean().default(false)
+  })
+});
+
+const docsCollection = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    section: z.string(),
+    order: z.number(),
+    updated: z.date()
+  })
+});
+
+export const collections = {
+  blog: blogCollection,
+  docs: docsCollection
+};
+```
+
+// Best Practices:
+1. Follow Astro conventions
+2. Use TypeScript features
+3. Optimize performance
+4. Handle SEO properly
+5. Implement error handling
+6. Write unit tests
+7. Document components
+8. Use content collections
+9. Handle data fetching
+10. Manage state properly
+
+// Security Considerations:
+1. Validate user input
+2. Handle API security
+3. Implement CSP
+4. Secure data fetching
+5. Handle authentication
+6. Protect routes
+7. Sanitize content
+8. Use HTTPS
+9. Handle file uploads
+10. Follow security updates

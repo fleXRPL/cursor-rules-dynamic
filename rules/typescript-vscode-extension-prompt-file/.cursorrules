@@ -1,0 +1,218 @@
+// TypeScript VSCode Extension Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A professional VSCode extension that:
+- Analyzes codebases and patterns
+- Manages rule versioning and history
+- Provides real-time file monitoring
+- Implements intelligent rule processing
+- Integrates with VSCode services
+- Handles workspace events
+- Manages extension state
+- Provides command palette integration
+
+// Project Structure
+src/
+  extension.ts        # Extension entry point
+  commands/           # Command implementations
+    ruleCommands.ts   # Rule-related commands
+    fileCommands.ts   # File operation commands
+  services/           # Core services
+    analyzer.ts       # Code analysis logic
+    ruleManager.ts    # Rule management
+    fileWatcher.ts    # File monitoring
+  models/             # Type definitions
+    rules.ts          # Rule interfaces
+    config.ts         # Configuration types
+  utils/              # Utility functions
+  test/               # Test files
+    suite/            # Test suites
+    fixtures/         # Test data
+
+// Development Guidelines
+1. Extension Lifecycle:
+   - Implement proper activation events
+   - Handle workspace changes
+   - Manage extension context
+   - Clean up resources on deactivation
+   - Use proper error boundaries
+   - Implement proper state management
+
+2. VSCode Integration:
+   - Use VSCode API effectively
+   - Register commands properly
+   - Handle configuration changes
+   - Implement proper status bar updates
+   - Use proper progress indicators
+   - Handle workspace trust
+
+3. Performance:
+   - Implement proper caching
+   - Use debouncing for file operations
+   - Optimize startup time
+   - Handle large files efficiently
+   - Implement proper memory management
+   - Use proper resource disposal
+
+4. Testing Requirements:
+   - Use VSCode test runner
+   - Mock VSCode API appropriately
+   - Test extension activation
+   - Implement integration tests
+   - Test error scenarios
+   - Verify command behavior
+
+// Dependencies
+Core:
+- @types/vscode: ^1.80.0
+- @types/node: ^18.15.0
+- typescript: ~5.1.0
+- vscode-test: ^1.6.1
+- mocha: ^10.2.0
+
+Optional:
+- eslint: ^8.44.0
+- prettier: ^3.0.0
+- webpack: ^5.88.0
+- ts-loader: ^9.4.0
+
+// Code Examples:
+
+1. Extension Activation Pattern:
+```typescript
+import * as vscode from 'vscode';
+
+export async function activate(context: vscode.ExtensionContext) {
+    const ruleManager = new RuleManager(context);
+    const analyzer = new Analyzer(context);
+    
+    // Register commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'cursorrules.analyzeWorkspace',
+            async () => {
+                try {
+                    await analyzer.analyzeWorkspace();
+                } catch (error) {
+                    vscode.window.showErrorMessage(
+                        `Analysis failed: ${error.message}`
+                    );
+                }
+            }
+        )
+    );
+    
+    // Setup file watcher
+    const watcher = vscode.workspace.createFileSystemWatcher(
+        '**/.cursorrules'
+    );
+    context.subscriptions.push(watcher);
+    
+    // Handle workspace changes
+    watcher.onDidChange(async uri => {
+        await ruleManager.handleRuleChange(uri);
+    });
+}
+
+export function deactivate() {
+    // Cleanup resources
+}
+```
+
+2. Service Implementation Pattern:
+```typescript
+export class RuleManager {
+    private readonly cache = new Map<string, Rule>();
+    private readonly disposables: vscode.Disposable[] = [];
+
+    constructor(private readonly context: vscode.ExtensionContext) {
+        // Setup status bar
+        this.statusBar = vscode.window.createStatusBarItem(
+            vscode.StatusBarAlignment.Right
+        );
+        this.disposables.push(this.statusBar);
+    }
+
+    public async handleRuleChange(uri: vscode.Uri): Promise<void> {
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: "Processing rule changes"
+            },
+            async () => {
+                try {
+                    const content = await this.readFile(uri);
+                    const rule = await this.parseRule(content);
+                    this.cache.set(uri.fsPath, rule);
+                    this.updateStatusBar();
+                } catch (error) {
+                    this.handleError(error);
+                }
+            }
+        );
+    }
+
+    public dispose(): void {
+        this.disposables.forEach(d => d.dispose());
+    }
+}
+```
+
+3. Testing Pattern:
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+import { RuleManager } from '../services/ruleManager';
+
+suite('Rule Manager Test Suite', () => {
+    let ruleManager: RuleManager;
+    let context: vscode.ExtensionContext;
+
+    setup(() => {
+        context = {
+            subscriptions: [],
+            extensionPath: __dirname,
+            globalState: {
+                get: (key: string) => undefined,
+                update: async (key: string, value: any) => Promise.resolve()
+            }
+        } as any;
+        ruleManager = new RuleManager(context);
+    });
+
+    test('should handle rule changes', async () => {
+        const uri = vscode.Uri.file('/test/.cursorrules');
+        await ruleManager.handleRuleChange(uri);
+        // Add assertions
+    });
+
+    teardown(() => {
+        ruleManager.dispose();
+    });
+});
+```
+
+// Best Practices:
+1. Follow VSCode extension guidelines
+2. Use proper error handling
+3. Implement proper logging
+4. Handle workspace events
+5. Use proper resource management
+6. Implement proper testing
+7. Use proper configuration
+8. Handle security properly
+9. Use proper progress indication
+10. Implement proper cleanup
+
+// Security Considerations:
+1. Validate all file operations
+2. Handle workspace trust
+3. Sanitize all inputs
+4. Use proper error handling
+5. Implement proper logging
+6. Handle sensitive data
+7. Use secure defaults
+8. Validate configurations
+9. Handle permissions properly
+10. Implement proper access controls

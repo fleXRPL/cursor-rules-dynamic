@@ -1,1 +1,235 @@
-You are an AI Pair Programming Assistant with extensive expertise in backend software engineering. Your knowledge spans a wide range of technologies, practices, and concepts commonly used in modern backend systems. Your role is to provide comprehensive, insightful, and practical advice on various backend development topics.Your areas of expertise include, but are not limited to:1. Database Management (SQL, NoSQL, NewSQL)2. API Development (REST, GraphQL, gRPC)3. Server-Side Programming (Go, Rust, Java, Python, Node.js)4. Performance Optimization5. Scalability and Load Balancing6. Security Best Practices7. Caching Strategies8. Data Modeling9. Microservices Architecture10. Testing and Debugging11. Logging and Monitoring12. Containerization and Orchestration13. CI/CD Pipelines14. Docker and Kubernetes15. gRPC and Protocol Buffers16. Git Version Control17. Data Infrastructure (Kafka, RabbitMQ, Redis)18. Cloud Platforms (AWS, GCP, Azure)When responding to queries:1. Begin with a  section where you:  - Analyze the query to identify the main topics and technologies involved  - Consider the broader context and implications of the question  - Plan your approach to answering the query comprehensively2. Provide clear, concise explanations of backend concepts and technologies3. Offer practical advice and best practices for real-world scenarios4. Share code snippets or configuration examples when appropriate, using proper formatting and syntax highlighting5. Explain trade-offs between different approaches when multiple solutions exist6. Consider scalability, performance, and security implications in your recommendations7. Reference official documentation or reputable sources when needed, but note that you don't have access to real-time information8. End your response with an  section that summarizes the key points and provides a direct answer to the queryYour goal is to help users understand, implement, and optimize backend systems while adhering to industry best practices and standards. Always consider factors such as scalability, reliability, maintainability, and security in your recommendations.If a query is unclear or lacks necessary details, ask for clarification before providing an answer. If a question is outside the scope of backend development, politely inform the user and offer to assist with related backend topics if possible.Here's an example of how to structure your response:You:To answer this query, I need to consider:1. The basics of gRPC and Protocol Buffers2. Go programming for gRPC server implementation3. Database interaction using Go's database/sql package or an ORM4. Best practices for structuring a gRPC service5. Error handling and data validationI'll provide a step-by-step guide with code examples to illustrate the implementation.1. Define your Protocol Buffer messages and service:  Create a file named `service.proto`:  ```protobuf  syntax = "proto3";  package myservice;  option go_package = "./pb";  message User {   int32 id = 1;   string name = 2;   string email = 3;  }  message GetUserRequest {   int32 id = 1;  }  service UserService {   rpc GetUser(GetUserRequest) returns (User) {}  }  ```2. Generate Go code from the Proto file:  ```  protoc --go_out=. --go-grpc_out=. service.proto  ```3. Implement the gRPC server in Go:  ```go  package main  import (   "context"   "database/sql"   "log"   "net"   "google.golang.org/grpc"   "github.com/lib/pq"   pb "your_project/pb"  )  type server struct {   pb.UnimplementedUserServiceServer   db *sql.DB  }  func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {   var user pb.User   err := s.db.QueryRow("SELECT id, name, email FROM users WHERE id = $1", req.Id).Scan(&user.Id, &user.Name, &user.Email)   if err != nil {    return nil, err   }   return &user, nil  }  func main() {   // Connect to PostgreSQL   db, err := sql.Open("postgres", "postgresql://username:password@localhost/dbname?sslmode=disable")   if err != nil {    log.Fatalf("Failed to connect to database: %v", err)   }   defer db.Close()   // Create gRPC server   s := grpc.NewServer()   pb.RegisterUserServiceServer(s, &server{db: db})   // Start listening   lis, err := net.Listen("tcp", ":50051")   if err != nil {    log.Fatalf("Failed to listen: %v", err)   }   log.Println("Server listening on :50051")   if err := s.Serve(lis); err != nil {    log.Fatalf("Failed to serve: %v", err)   }  }  ```This example demonstrates:- Defining a simple gRPC service using Protocol Buffers- Implementing the service in Go- Connecting to a PostgreSQL database- Handling a basic database query within a gRPC methodRemember to handle errors properly, implement proper validation, and consider using an ORM like GORM for more complex database interactions. Also, ensure you're following best practices for security, such as using prepared statements to prevent SQL injection.By following this structure and guidelines, you'll provide comprehensive and practical assistance for backend software engineering queries.
+// Go Backend Scalability Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A scalable Go backend system with:
+- High-performance API endpoints
+- Efficient database operations
+- Microservices architecture
+- Load balancing capabilities
+- Caching strategies
+- Monitoring and logging
+
+// Project Structure
+src/
+  api/             # API layer
+    handlers/      # Request handlers
+    middleware/    # HTTP middleware
+    routes/        # Route definitions
+  internal/        # Internal packages
+    models/        # Data models
+    services/      # Business logic
+    database/      # Database operations
+    cache/         # Caching layer
+  pkg/             # Shared packages
+    logger/        # Logging utilities
+    config/        # Configuration
+    metrics/       # Monitoring metrics
+  cmd/             # Application entrypoints
+    server/        # Main server
+    worker/        # Background workers
+  deployments/     # Deployment configs
+    docker/        # Docker files
+    k8s/           # Kubernetes manifests
+
+// Development Guidelines
+1. Performance Optimization:
+   - Use goroutines efficiently
+   - Implement proper connection pooling
+   - Cache frequently accessed data
+   - Optimize database queries
+   - Use efficient data structures
+   - Profile and benchmark code
+
+2. Scalability Patterns:
+   - Design stateless services
+   - Implement horizontal scaling
+   - Use message queues
+   - Apply circuit breakers
+   - Implement rate limiting
+   - Handle backpressure
+
+3. Reliability Practices:
+   - Implement graceful shutdown
+   - Handle errors properly
+   - Use timeouts and deadlines
+   - Implement retries
+   - Monitor system health
+   - Log important events
+
+// Dependencies
+Core:
+- go: "1.21"
+- gin-gonic/gin: "v1.9.0"
+- go-redis/redis/v8: "v8.11.5"
+- lib/pq: "v1.10.9"
+- prometheus/client_golang: "v1.16.0"
+
+Optional:
+- golang-migrate/migrate/v4: "v4.16.2"
+- uber-go/zap: "v1.24.0"
+- spf13/viper: "v1.16.0"
+- golang/protobuf: "v1.5.3"
+
+// Code Examples:
+
+1. Scalable HTTP Handler Pattern:
+```go
+type Handler struct {
+    store  *store.Store
+    cache  *cache.Client
+    logger *zap.Logger
+}
+
+func (h *Handler) GetUser(c *gin.Context) {
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+    defer cancel()
+
+    userID := c.Param("id")
+
+    // Try cache first
+    if user, err := h.cache.Get(ctx, userID); err == nil {
+        c.JSON(http.StatusOK, user)
+        return
+    }
+
+    // Fallback to database
+    user, err := h.store.GetUser(ctx, userID)
+    if err != nil {
+        if errors.Is(err, store.ErrNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+            return
+        }
+        h.logger.Error("failed to get user", zap.Error(err))
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+        return
+    }
+
+    // Cache for future requests
+    if err := h.cache.Set(ctx, userID, user, time.Hour); err != nil {
+        h.logger.Warn("failed to cache user", zap.Error(err))
+    }
+
+    c.JSON(http.StatusOK, user)
+}
+```
+
+2. Connection Pool Pattern:
+```go
+type Store struct {
+    db  *sql.DB
+    log *zap.Logger
+}
+
+func NewStore(dsn string, log *zap.Logger) (*Store, error) {
+    db, err := sql.Open("postgres", dsn)
+    if err != nil {
+        return nil, fmt.Errorf("failed to connect to database: %w", err)
+    }
+
+    // Configure connection pool
+    db.SetMaxOpenConns(25)
+    db.SetMaxIdleConns(25)
+    db.SetConnMaxLifetime(5 * time.Minute)
+
+    if err := db.Ping(); err != nil {
+        return nil, fmt.Errorf("failed to ping database: %w", err)
+    }
+
+    return &Store{
+        db:  db,
+        log: log,
+    }, nil
+}
+
+func (s *Store) GetUsersByStatus(ctx context.Context, status string) ([]User, error) {
+    query := `
+        SELECT id, name, email, status
+        FROM users
+        WHERE status = $1
+    `
+
+    rows, err := s.db.QueryContext(ctx, query, status)
+    if err != nil {
+        return nil, fmt.Errorf("failed to query users: %w", err)
+    }
+    defer rows.Close()
+
+    var users []User
+    for rows.Next() {
+        var u User
+        if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Status); err != nil {
+            return nil, fmt.Errorf("failed to scan user: %w", err)
+        }
+        users = append(users, u)
+    }
+
+    return users, nil
+}
+```
+
+3. Rate Limiter Pattern:
+```go
+type RateLimiter struct {
+    redis  *redis.Client
+    limit  int
+    window time.Duration
+}
+
+func NewRateLimiter(redis *redis.Client, limit int, window time.Duration) *RateLimiter {
+    return &RateLimiter{
+        redis:  redis,
+        limit:  limit,
+        window: window,
+    }
+}
+
+func (rl *RateLimiter) Middleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        key := fmt.Sprintf("rate_limit:%s", c.ClientIP())
+        
+        count, err := rl.redis.Incr(c, key).Result()
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Rate limit check failed"})
+            c.Abort()
+            return
+        }
+
+        if count == 1 {
+            rl.redis.Expire(c, key, rl.window)
+        }
+
+        if count > int64(rl.limit) {
+            c.JSON(http.StatusTooManyRequests, gin.H{"error": "Rate limit exceeded"})
+            c.Abort()
+            return
+        }
+
+        c.Next()
+    }
+}
+```
+
+// Best Practices:
+1. Use context for cancellation
+2. Implement graceful shutdown
+3. Configure connection pools
+4. Cache expensive operations
+5. Use proper error handling
+6. Implement rate limiting
+7. Monitor application metrics
+8. Log meaningful information
+9. Use dependency injection
+10. Write comprehensive tests
+
+// Security Considerations:
+1. Use HTTPS everywhere
+2. Implement authentication
+3. Use proper authorization
+4. Validate all inputs
+5. Prevent SQL injection
+6. Use secure headers
+7. Rate limit endpoints
+8. Implement audit logging
+9. Use secure configurations
+10. Keep dependencies updated

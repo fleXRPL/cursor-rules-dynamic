@@ -1,0 +1,335 @@
+// Flutter Dart Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern cross-platform mobile application using Flutter:
+- Material Design apps
+- iOS-style apps
+- Custom UI/UX
+- State management
+- API integration
+- Local storage
+- Push notifications
+- Animations
+
+// Project Structure
+lib/
+  core/           # Core functionality
+    constants/    # App constants
+    theme/        # App theme
+    utils/        # Utilities
+  data/           # Data layer
+    models/       # Data models
+    repositories/ # Data repositories
+    services/     # API services
+  domain/         # Business logic
+    entities/     # Business entities
+    usecases/     # Business use cases
+  presentation/   # UI layer
+    screens/      # App screens
+    widgets/      # Reusable widgets
+    blocs/        # State management
+  app.dart        # App entry point
+test/             # Test suite
+  unit/           # Unit tests
+  widget/         # Widget tests
+  integration/    # Integration tests
+assets/           # App assets
+  images/         # Image files
+  fonts/          # Font files
+  icons/          # Icon files
+
+// Development Guidelines
+1. UI Development:
+   - Widget composition
+   - State management
+   - Navigation
+   - Theming
+   - Responsive design
+   - Accessibility
+
+2. Code Structure:
+   - Clean architecture
+   - SOLID principles
+   - Dependency injection
+   - Error handling
+   - Logging
+   - Testing
+
+3. Performance:
+   - Widget rebuilds
+   - Memory usage
+   - Image optimization
+   - Animation smoothness
+   - App size
+   - Loading time
+
+// Dependencies
+Core:
+- flutter_sdk: "^3.10.0"
+- provider: "^6.0.0"
+- dio: "^5.0.0"
+- hive: "^2.2.0"
+
+Optional:
+- flutter_bloc: "^8.1.0"
+- get_it: "^7.6.0"
+- injectable: "^2.1.0"
+- freezed: "^2.3.0"
+
+// Code Examples:
+
+1. Widget Pattern:
+```dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class ProductList extends StatelessWidget {
+  const ProductList({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ProductsProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Text(
+              'Error: ${provider.error}',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.red,
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: provider.products.length,
+          itemBuilder: (context, index) {
+            final product = provider.products[index];
+            return ProductCard(
+              product: product,
+              onTap: () => Navigator.pushNamed(
+                context,
+                '/product-details',
+                arguments: product,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class ProductCard extends StatelessWidget {
+  final Product product;
+  final VoidCallback onTap;
+
+  const ProductCard({
+    Key? key,
+    required this.product,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      child: ListTile(
+        leading: Hero(
+          tag: 'product-${product.id}',
+          child: Image.network(
+            product.imageUrl,
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+          ),
+        ),
+        title: Text(product.name),
+        subtitle: Text(
+          '\$${product.price.toStringAsFixed(2)}',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.green,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+```
+
+2. Provider Pattern:
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
+
+class ProductsProvider with ChangeNotifier {
+  final ProductRepository _repository;
+  List<Product> _products = [];
+  bool _isLoading = false;
+  String? _error;
+
+  ProductsProvider(this._repository);
+
+  List<Product> get products => _products;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  Future<void> fetchProducts() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _products = await _repository.getProducts();
+    } on DioError catch (e) {
+      _error = e.message;
+    } catch (e) {
+      _error = 'An unexpected error occurred';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addProduct(Product product) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final newProduct = await _repository.addProduct(product);
+      _products.add(newProduct);
+    } catch (e) {
+      _error = 'Failed to add product';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}
+```
+
+3. Repository Pattern:
+```dart
+import 'package:dio/dio.dart';
+import 'package:injectable/injectable.dart';
+
+@injectable
+class ProductRepository {
+  final Dio _dio;
+  final String _baseUrl;
+
+  ProductRepository(
+    this._dio,
+    @Named('baseUrl') this._baseUrl,
+  );
+
+  Future<List<Product>> getProducts() async {
+    try {
+      final response = await _dio.get('$_baseUrl/products');
+      return (response.data as List)
+          .map((json) => Product.fromJson(json))
+          .toList();
+    } on DioError {
+      rethrow;
+    } catch (e) {
+      throw Exception('Failed to fetch products');
+    }
+  }
+
+  Future<Product> getProduct(String id) async {
+    try {
+      final response = await _dio.get('$_baseUrl/products/$id');
+      return Product.fromJson(response.data);
+    } on DioError {
+      rethrow;
+    } catch (e) {
+      throw Exception('Failed to fetch product');
+    }
+  }
+
+  Future<Product> addProduct(Product product) async {
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/products',
+        data: product.toJson(),
+      );
+      return Product.fromJson(response.data);
+    } on DioError {
+      rethrow;
+    } catch (e) {
+      throw Exception('Failed to add product');
+    }
+  }
+}
+```
+
+// Best Practices:
+1. Code Quality:
+   - Documentation
+   - Type safety
+   - Error handling
+   - Testing
+   - Logging
+   - Code style
+
+2. Architecture:
+   - Clean architecture
+   - SOLID principles
+   - Dependency injection
+   - State management
+   - Navigation
+   - Error handling
+
+3. Performance:
+   - Widget optimization
+   - Memory management
+   - Image caching
+   - Lazy loading
+   - Build methods
+   - State updates
+
+4. UI/UX:
+   - Material Design
+   - iOS guidelines
+   - Responsive design
+   - Accessibility
+   - Animations
+   - User feedback
+
+// Security Considerations:
+1. Data Security:
+   - Secure storage
+   - API security
+   - Input validation
+   - Authentication
+   - Authorization
+   - Encryption
+
+2. Code Security:
+   - Dependencies
+   - Platform channels
+   - Web security
+   - Deep links
+   - File access
+   - Permissions
+
+3. Network Security:
+   - HTTPS
+   - Certificate pinning
+   - API tokens
+   - OAuth flows
+   - Rate limiting
+   - Request signing 

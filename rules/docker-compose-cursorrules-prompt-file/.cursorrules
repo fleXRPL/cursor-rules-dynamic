@@ -1,0 +1,247 @@
+// Docker Compose Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern containerized application environment using Docker Compose:
+- Multi-container applications
+- Development environments
+- Production deployments
+- Service orchestration
+- Network configuration
+- Volume management
+- Environment variables
+- Health checks
+
+// Project Structure
+project/
+  docker/                  # Docker-related files
+    services/              # Service-specific Dockerfiles
+      app/                 # Application service
+      db/                  # Database service
+      cache/               # Cache service
+      proxy/               # Reverse proxy
+    config/                # Configuration files
+    scripts/               # Helper scripts
+  docker-compose.yml       # Main compose file
+  docker-compose.dev.yml   # Development overrides
+  docker-compose.prod.yml  # Production overrides
+  .env                     # Environment variables
+  .dockerignore            # Ignore patterns
+
+// Development Guidelines
+1. Service Configuration:
+   - Use official images
+   - Pin versions
+   - Layer optimization
+   - Multi-stage builds
+   - Health checks
+   - Resource limits
+
+2. Network Setup:
+   - Define networks
+   - Expose ports
+   - Internal routing
+   - Service discovery
+   - Load balancing
+   - SSL termination
+
+3. Volume Management:
+   - Named volumes
+   - Bind mounts
+   - tmpfs mounts
+   - Data persistence
+   - Backup strategy
+   - Access control
+
+// Dependencies
+Core:
+- docker: "^24.0.0"
+- docker-compose: "^2.20.0"
+
+Optional:
+- docker-compose-watch: "^2.0.0"
+- docker-compose-cli: "^2.0.0"
+
+// Code Examples:
+
+1. Basic Service Pattern:
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./docker/services/app
+      dockerfile: Dockerfile
+      target: development
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://user:pass@db:5432/dbname
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=dbname
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d dbname"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+```
+
+2. Development Override Pattern:
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build:
+      target: development
+    environment:
+      - DEBUG=true
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "9229:9229"  # Debug port
+
+  db:
+    ports:
+      - "5432:5432"  # Expose for local development
+    volumes:
+      - ./docker/config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+```
+
+3. Production Override Pattern:
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build:
+      target: production
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports: []  # No exposed ports in production
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+// Best Practices:
+1. Service Design:
+   - Single responsibility
+   - Service isolation
+   - Resource limits
+   - Health checks
+   - Logging strategy
+   - Error handling
+
+2. Configuration:
+   - Environment vars
+   - Config files
+   - Secrets management
+   - Build arguments
+   - Runtime args
+   - Overrides
+
+3. Performance:
+   - Image size
+   - Layer caching
+   - Network setup
+   - Volume mounts
+   - Resource limits
+   - Monitoring
+
+4. Security:
+   - Network isolation
+   - Secret management
+   - User permissions
+   - Image scanning
+   - Updates policy
+   - Access control
+
+// Security Considerations:
+1. Network Security:
+   - Network isolation
+   - Port exposure
+   - TLS/SSL
+   - Service mesh
+   - Access control
+   - Firewalls
+
+2. Data Protection:
+   - Volume security
+   - Backup strategy
+   - Encryption
+   - Access control
+   - Audit logging
+   - Monitoring
+
+3. Container Security:
+   - Image scanning
+   - Root access
+   - Resource limits
+   - User namespace
+   - Capabilities
+   - Updates 

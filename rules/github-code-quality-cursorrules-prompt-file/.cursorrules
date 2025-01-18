@@ -1,1 +1,156 @@
-{"rules": [{"name": "Verify Information","pattern": "(?i)\b(assume|assumption|guess|speculate)\b","message": "Always verify information before presenting it. Do not make assumptions or speculate without clear evidence."},{"name": "File-by-File Changes","pattern": "// MULTI-FILE CHANGE:","message": "Make changes file by file and give me a chance to spot mistakes"},{"name": "No Apologies","pattern": "(?i)\b(sorry|apologize|apologies)\b","message": "Never use apologies"},{"name": "No Understanding Feedback","pattern": "(?i)\b(understand|understood|got it)\b","message": "Avoid giving feedback about understanding in comments or documentation"},{"name": "No Whitespace Suggestions","pattern": "(?i)\b(whitespace|indentation|spacing)\b","message": "Don't suggest whitespace changes"},{"name": "No Summaries","pattern": "(?i)\b(summary|summarize|overview)\b","message": "Don't summarize changes made"},{"name": "No Inventions","pattern": "(?i)\b(suggest|recommendation|propose)\b","message": "Don't invent changes other than what's explicitly requested"},{"name": "No Unnecessary Confirmations","pattern": "(?i)\b(make sure|confirm|verify|check)\b","message": "Don't ask for confirmation of information already provided in the context"},{"name": "Preserve Existing Code","pattern": "(?i)\b(remove|delete|eliminate|destroy)\b","message": "Don't remove unrelated code or functionalities. Pay attention to preserving existing structures."},{"name": "Single Chunk Edits","pattern": "(?i)\b(first|then|next|after that|finally)\b","message": "Provide all edits in a single chunk instead of multiple-step instructions or explanations for the same file"},{"name": "No Implementation Checks","pattern": "(?i)\b(make sure|verify|check|confirm) (it's|it is|that) (correctly|properly) implemented\b","message": "Don't ask the user to verify implementations that are visible in the provided context"},{"name": "No Unnecessary Updates","pattern": "(?i)\b(update|change|modify|alter)\b.*\bno changes\b","message": "Don't suggest updates or changes to files when there are no actual modifications needed"},{"name": "Provide Real File Links","pattern": "(?i)\b(file|in)\b.*\b(x\.md)\b","message": "Always provide links to the real files, not x.md"},{"name": "No Previous x.md Consideration","pattern": "(?i)\b(previous|earlier|last)\b.*\bx\.md\b","message": "Do not consider any previous x.md files in your memory. Complain if the contents are the same as previous runs."},{"name": "No Current Implementation","pattern": "(?i)\b(current|existing)\s+(implementation|code)\b","message": "Don't show or discuss the current implementation unless specifically requested"},{"name": "Check x.md Content","pattern": "(?i)\b(file|content|implementation)\b","message": "Remember to check the x.md file for the current file contents and implementations"}]}
+// GitHub Code Quality Expert Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A production-ready GitHub repository with:
+- Automated code quality checks
+- Standardized review processes
+- Consistent code style enforcement
+- Comprehensive documentation
+- Security best practices
+- Efficient CI/CD pipelines
+
+// Project Structure
+.github/
+  workflows/                # GitHub Actions configurations
+    quality.yml             # Code quality checks
+    security.yml            # Security scans
+  ISSUE_TEMPLATE/           # Issue templates
+  PULL_REQUEST_TEMPLATE/    # PR templates
+docs/                       # Documentation
+  CODE_OF_CONDUCT.md        # Code of conduct
+  CONTRIBUTING.md           # Contribution guidelines
+  SECURITY.md               # Security policies
+tests/                      # Test suites
+scripts/                    # Development scripts
+
+// Development Guidelines
+1. Code Review:
+   - Verify all information before presenting
+   - Make changes file by file
+   - Focus on functionality over formatting
+   - Preserve existing code structure
+   - Provide complete changes in single reviews
+   - Link to actual files in documentation
+
+2. Documentation:
+   - Maintain clear, concise documentation
+   - Avoid unnecessary explanations
+   - Document real implementations
+   - Keep documentation up-to-date
+   - Include security considerations
+   - Provide clear setup instructions
+
+3. Quality Checks:
+   - Implement automated testing
+   - Use static code analysis
+   - Monitor code coverage
+   - Check dependencies regularly
+   - Validate documentation links
+   - Review security alerts
+
+// Dependencies
+Core:
+- github_actions: "latest"
+- code_coverage: "latest"
+- linters: "latest"
+- security_scanners: "latest"
+
+Optional:
+- documentation_tools: "latest"
+- automated_testing: "latest"
+- dependency_management: "latest"
+- code_quality_metrics: "latest"
+
+// Code Examples:
+
+1. GitHub Workflow Pattern:
+```yaml
+name: Code Quality
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run linters
+        uses: github/super-linter@v4
+      - name: Run tests
+        run: |
+          npm install
+          npm test
+      - name: Check coverage
+        uses: coverallsapp/github-action@v2
+```
+
+2. Pull Request Template Pattern:
+```markdown
+## Description
+
+Please include a summary of the changes and the related issue.
+
+## Type of change
+
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Checklist
+
+- [ ] My code follows the style guidelines
+- [ ] I have performed a self-review
+- [ ] I have added tests
+- [ ] Documentation has been updated
+```
+
+3. Security Policy Pattern:
+```markdown
+# Security Policy
+
+## Supported Versions
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 5.1.x   | :white_check_mark: |
+| 5.0.x   | :x:                |
+| 4.0.x   | :white_check_mark: |
+| < 4.0   | :x:                |
+
+## Reporting a Vulnerability
+
+1. **Do not** open a public issue
+2. Email security@example.com
+3. Expect response within 48 hours
+4. Regular updates on reported vulnerabilities
+```
+
+// Best Practices:
+1. Always verify information before presenting
+2. Make changes file by file
+3. Avoid unnecessary formatting changes
+4. Preserve existing code functionality
+5. Provide complete changes in single reviews
+6. Use real file references
+7. Keep documentation current
+8. Implement automated testing
+9. Monitor code quality metrics
+10. Regular security reviews
+
+// Security Considerations:
+1. Regular dependency updates
+2. Code scanning enabled
+3. Security policy defined
+4. Access control implemented
+5. Secrets management
+6. Vulnerability monitoring
+7. Regular security audits
+8. Secure development practices
+9. Documentation security
+10. Compliance checks

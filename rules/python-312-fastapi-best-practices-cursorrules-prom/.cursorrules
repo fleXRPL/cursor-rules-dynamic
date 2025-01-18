@@ -1,1 +1,196 @@
-Here are some best practices and rules you must follow:- You use Python 3.12- Frameworks: - pydantic - fastapi - sqlalchemy- You use poetry for dependency management- You use alembic for database migrations- You use fastapi-users for user management- You use fastapi-jwt-auth for authentication- You use fastapi-mail for email sending- You use fastapi-cache for caching- You use fastapi-limiter for rate limiting- You use fastapi-pagination for pagination1. **Use Meaningful Names**: Choose descriptive variable, function, and class names.2. **Follow PEP 8**: Adhere to the Python Enhancement Proposal 8 style guide for formatting.3. **Use Docstrings**: Document functions and classes with docstrings to explain their purpose.4. **Keep It Simple**: Write simple and clear code; avoid unnecessary complexity.5. **Use List Comprehensions**: Prefer list comprehensions for creating lists over traditional loops when appropriate.6. **Handle Exceptions**: Use try-except blocks to handle exceptions gracefully.7. **Use Virtual Environments**: Isolate project dependencies using virtual environments (e.g., `venv`).8. **Write Tests**: Implement unit tests to ensure code reliability.9. **Use Type Hints**: Utilize type hints for better code clarity and type checking.10. **Avoid Global Variables**: Limit the use of global variables to reduce side effects.These rules will help you write clean, efficient, and maintainable Python code.
+// Python 3.12 FastAPI Best Practices Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern FastAPI application leveraging Python 3.12's latest features:
+- Type-safe API endpoints
+- High-performance async operations
+- Modern dependency injection
+- Enhanced error handling
+- Improved type annotations
+- Optimized async context managers
+- Exception groups support
+- Enhanced debugging capabilities
+
+// Project Structure
+src/
+  api/
+    v1/
+      routers/       # Route modules
+      models/        # Pydantic v2 models
+      dependencies/  # FastAPI dependencies
+  core/
+    config/          # App configuration
+    logging/         # Structured logging
+    exceptions/      # Custom exceptions
+  services/          # Business logic
+    auth/            # Authentication
+    data/            # Data processing
+  tests/             # Test suites
+    unit/            # Unit tests
+    integration/     # Integration tests
+  utils/             # Utilities
+  main.py            # Entry point
+
+// Development Guidelines
+1. Python 3.12 Features:
+   - Use PEP 695 type aliases
+   - Implement f-string debug syntax
+   - Utilize exception groups
+   - Use enhanced error locations
+   - Implement async context managers
+   - Use improved typing features
+
+2. FastAPI Best Practices:
+   - Use Pydantic v2 models
+   - Implement proper dependency injection
+   - Use async endpoints
+   - Handle errors gracefully
+   - Document with OpenAPI
+   - Use proper status codes
+
+3. Code Quality:
+   - Use type hints everywhere
+   - Implement proper logging
+   - Write comprehensive tests
+   - Use async patterns correctly
+   - Document all components
+   - Follow PEP 8 guidelines
+
+// Dependencies
+Core:
+- python>=3.12.0
+- fastapi>=0.100.0
+- pydantic>=2.0.0
+- uvicorn[standard]>=0.23.0
+- python-jose[cryptography]>=3.3.0
+- passlib[bcrypt]>=1.7.4
+- pytest>=7.4.0
+- httpx>=0.24.0
+
+Optional:
+- pytest-asyncio>=0.21.0
+- pytest-cov>=4.1.0
+- black>=23.7.0
+- ruff>=0.0.280
+- mypy>=1.5.0
+
+// Code Examples:
+
+1. Modern Type Hints (PEP 695):
+```python
+from typing import TypeVar, Generic
+from fastapi import FastAPI, Depends
+from pydantic import BaseModel
+
+type UserId = int
+type Email = str
+
+class UserBase(BaseModel):
+    email: Email
+    is_active: bool = True
+
+class UserCreate(UserBase):
+    password: str
+
+class User(UserBase):
+    id: UserId
+    
+    class Config:
+        from_attributes = True
+
+type PaginatedResponse[T] = dict[str, list[T] | int]
+
+async def get_users(
+    skip: int = 0,
+    limit: int = 100
+) -> PaginatedResponse[User]:
+    users = await user_service.get_users(skip, limit)
+    total = await user_service.count_users()
+    return {"items": users, "total": total}
+```
+
+2. Exception Groups:
+```python
+from fastapi import HTTPException
+from typing import Sequence
+
+class ValidationError(Exception):
+    def __init__(self, field: str, message: str):
+        self.field = field
+        self.message = message
+
+async def validate_user_data(user: UserCreate) -> None:
+    errors: list[ValidationError] = []
+    
+    if await user_service.email_exists(user.email):
+        errors.append(ValidationError("email", "Email already registered"))
+    
+    if len(user.password) < 8:
+        errors.append(ValidationError("password", "Password too short"))
+    
+    if errors:
+        raise ExceptionGroup(
+            "User validation failed",
+            errors
+        )
+
+@app.post("/users/")
+async def create_user(user: UserCreate):
+    try:
+        await validate_user_data(user)
+        return await user_service.create_user(user)
+    except* ValidationError as eg:
+        raise HTTPException(
+            status_code=400,
+            detail=[{"field": e.field, "message": e.message} for e in eg.exceptions]
+        )
+```
+
+3. Enhanced Async Context Managers:
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from typing import AsyncGenerator
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Startup
+    await db.connect()
+    await cache.connect()
+    await metrics.start()
+    
+    try:
+        yield
+    finally:
+        # Shutdown
+        await metrics.stop()
+        await cache.disconnect()
+        await db.disconnect()
+
+app = FastAPI(lifespan=lifespan)
+```
+
+// Best Practices:
+1. Use Python 3.12's type system
+2. Implement proper error handling
+3. Use async operations correctly
+4. Document with OpenAPI
+5. Write comprehensive tests
+6. Use proper logging
+7. Implement security best practices
+8. Use proper dependency injection
+9. Follow REST principles
+10. Monitor performance
+
+// Security Considerations:
+1. Use proper authentication
+2. Implement authorization
+3. Validate all inputs
+4. Use HTTPS
+5. Implement rate limiting
+6. Use secure password hashing
+7. Implement proper CORS
+8. Use secure headers
+9. Implement audit logging
+10. Use proper session management

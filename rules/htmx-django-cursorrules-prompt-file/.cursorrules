@@ -1,39 +1,222 @@
-// HTMX with Django .cursorrules
+// HTMX with Django Development Guidelines
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
 
-// HTMX and Django best practices
-const htmxDjangoBestPractices = [
-  "Use Django's template system with HTMX attributes",
-  "Implement Django forms for form handling",
-  "Utilize Django's URL routing system",
-  "Use Django's class-based views for HTMX responses",
-  "Implement Django ORM for database operations",
-  "Utilize Django's middleware for request/response processing",
-];
+// What you can build with this ruleset:
+Modern Django applications with HTMX integration featuring:
+- Server-side rendered templates
+- Dynamic UI updates without JavaScript
+- Django form integration
+- Real-time interactions
+- Database-driven updates
+- Infinite scrolling
+- Modal dialogs
+- Live search
 
-// Folder structure
-const folderStructure = `
+// Project Structure
 project_name/
-  app_name/
-    templates/
-    static/
-      css/
-      js/
-    models.py
-    views.py
-    urls.py
-  project_name/
-    settings.py
-    urls.py
-manage.py
-`;
+  app_name/          # Django app
+    templates/       # HTML templates
+      base.html      # Base template
+      components/    # Reusable components
+        form.html    # Form component
+        modal.html   # Modal component
+      pages/         # Page templates
+        index.html   # Home page
+        about.html   # About page
+    static/          # Static assets
+      css/           # Stylesheets
+        main.css     # Main styles
+      js/            # JavaScript
+        htmx.min.js  # HTMX library
+    models.py        # Database models
+    views.py         # View controllers
+    urls.py          # URL routing
+    forms.py         # Form definitions
+    tests/           # Test files
+      test_views.py  # View tests
+      test_models.py # Model tests
+  project_name/      # Project configuration
+    settings.py      # Django settings
+    urls.py          # Root URL config
+  manage.py          # Django CLI
 
-// Additional instructions
-const additionalInstructions = `
-1. Use Django's template tags with HTMX attributes
-2. Implement proper CSRF protection with Django's built-in features
-3. Utilize Django's HttpResponse for HTMX-specific responses
-4. Use Django's form validation for HTMX requests
-5. Implement proper error handling and logging
-6. Follow Django's best practices for project structure
-7. Use Django's staticfiles app for managing static assets
-`;
+// Development Guidelines
+1. Django Integration:
+   - Use class-based views
+   - Implement Django forms
+   - Follow URL patterns
+   - Use template inheritance
+   - Handle CSRF properly
+   - Follow Django conventions
+
+2. HTMX Patterns:
+   - Use template tags
+   - Return partial HTML
+   - Handle form validation
+   - Implement error responses
+   - Show loading states
+   - Use proper targeting
+
+3. Database Patterns:
+   - Use Django ORM
+   - Optimize queries
+   - Handle transactions
+   - Implement caching
+   - Follow migrations
+   - Maintain consistency
+
+// Dependencies
+Core:
+- django: "^4.2.0"
+- htmx: "^1.9.0"
+- python: "^3.8"
+- psycopg2: "^2.9.0"
+
+Optional:
+- django-debug-toolbar: "^4.0.0"
+- django-htmx: "^1.0.0"
+- django-crispy-forms: "^2.0.0"
+- django-compressor: "^4.0.0"
+
+// Code Examples:
+
+1. Django View Pattern:
+```python
+from django.views.generic import ListView
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from .models import Item
+
+class ItemListView(ListView):
+    model = Item
+    template_name = 'items/list.html'
+    context_object_name = 'items'
+    paginate_by = 10
+    
+    def get(self, request, *args, **kwargs):
+        # Check if this is an HTMX request
+        if request.htmx:
+            # Get queryset
+            self.object_list = self.get_queryset()
+            context = self.get_context_data()
+            
+            # Render only the items partial
+            html = render_to_string(
+                'items/partials/item_list.html',
+                context,
+                request=request
+            )
+            return HttpResponse(html)
+        
+        # Regular request - render full template
+        return super().get(request, *args, **kwargs)
+```
+
+2. Django Template Pattern:
+```html
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div id="items-container"
+     hx-get="{% url 'item-list' %}"
+     hx-trigger="revealed"
+     hx-swap="beforeend"
+     hx-indicator=".loading">
+    
+    {% include "items/partials/item_list.html" %}
+    
+    <div class="loading htmx-indicator">
+        Loading more items...
+    </div>
+</div>
+
+<!-- Item Form -->
+<form hx-post="{% url 'item-create' %}"
+      hx-target="#items-container"
+      hx-swap="afterbegin"
+      class="item-form">
+    {% csrf_token %}
+    
+    {{ form.as_p }}
+    
+    <button type="submit"
+            class="btn btn-primary">
+        Add Item
+    </button>
+</form>
+{% endblock %}
+```
+
+3. Django Form Pattern:
+```python
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import Item
+
+class ItemForm(forms.ModelForm):
+    class Meta:
+        model = Item
+        fields = ['title', 'description']
+        
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        if Item.objects.filter(title=title).exists():
+            raise ValidationError('An item with this title already exists.')
+        return title
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            # Return HTML for new item
+            html = render_to_string(
+                'items/partials/item.html',
+                {'item': instance}
+            )
+            return html
+        return instance
+
+# View using the form
+from django.views.generic.edit import CreateView
+
+class ItemCreateView(CreateView):
+    model = Item
+    form_class = ItemForm
+    template_name = 'items/create.html'
+    
+    def form_valid(self, form):
+        # Save and get HTML response
+        html = form.save()
+        return HttpResponse(html)
+    
+    def form_invalid(self, form):
+        return HttpResponse(
+            str(form.errors),
+            status=400
+        )
+```
+
+// Best Practices:
+1. Follow Django conventions
+2. Use class-based views
+3. Implement proper forms
+4. Handle CSRF correctly
+5. Optimize database queries
+6. Use template inheritance
+7. Handle errors gracefully
+8. Write comprehensive tests
+9. Document view responses
+10. Follow URL naming
+
+// Security Considerations:
+1. Enable CSRF protection
+2. Validate form inputs
+3. Sanitize HTML output
+4. Use proper permissions
+5. Handle file uploads safely
+6. Implement rate limiting
+7. Use HTTPS
+8. Secure admin interface
+9. Audit dependencies
+10. Log security events

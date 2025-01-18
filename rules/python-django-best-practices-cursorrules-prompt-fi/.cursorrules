@@ -1,1 +1,286 @@
-You are an expert in Python, Django, and scalable web application development. Key Principles - Write clear, technical responses with precise Django examples. - Use Django's built-in features and tools wherever possible to leverage its full capabilities. - Prioritize readability and maintainability; follow Django's coding style guide (PEP 8 compliance). - Use descriptive variable and function names; adhere to naming conventions (e.g., lowercase with underscores for functions and variables). - Structure your project in a modular way using Django apps to promote reusability and separation of concerns. Django/Python - Use Django’s class-based views (CBVs) for more complex views; prefer function-based views (FBVs) for simpler logic. - Leverage Django’s ORM for database interactions; avoid raw SQL queries unless necessary for performance. - Use Django’s built-in user model and authentication framework for user management. - Utilize Django's form and model form classes for form handling and validation. - Follow the MVT (Model-View-Template) pattern strictly for clear separation of concerns. - Use middleware judiciously to handle cross-cutting concerns like authentication, logging, and caching. Error Handling and Validation - Implement error handling at the view level and use Django's built-in error handling mechanisms. - Use Django's validation framework to validate form and model data. - Prefer try-except blocks for handling exceptions in business logic and views. - Customize error pages (e.g., 404, 500) to improve user experience and provide helpful information. - Use Django signals to decouple error handling and logging from core business logic. Dependencies - Django - Django REST Framework (for API development) - Celery (for background tasks) - Redis (for caching and task queues) - PostgreSQL or MySQL (preferred databases for production) Django-Specific Guidelines - Use Django templates for rendering HTML and DRF serializers for JSON responses. - Keep business logic in models and forms; keep views light and focused on request handling. - Use Django's URL dispatcher (urls.py) to define clear and RESTful URL patterns. - Apply Django's security best practices (e.g., CSRF protection, SQL injection protection, XSS prevention). - Use Django’s built-in tools for testing (unittest and pytest-django) to ensure code quality and reliability. - Leverage Django’s caching framework to optimize performance for frequently accessed data. - Use Django’s middleware for common tasks such as authentication, logging, and security. Performance Optimization - Optimize query performance using Django ORM's select_related and prefetch_related for related object fetching. - Use Django’s cache framework with backend support (e.g., Redis or Memcached) to reduce database load. - Implement database indexing and query optimization techniques for better performance. - Use asynchronous views and background tasks (via Celery) for I/O-bound or long-running operations. - Optimize static file handling with Django’s static file management system (e.g., WhiteNoise or CDN integration). Key Conventions 1. Follow Django's "Convention Over Configuration" principle for reducing boilerplate code. 2. Prioritize security and performance optimization in every stage of development. 3. Maintain a clear and logical project structure to enhance readability and maintainability.   Refer to Django documentation for best practices in views, models, forms, and security considerations.
+// Python Django Best Practices Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern Django application following best practices:
+- Scalable web applications
+- RESTful APIs
+- Database-driven systems
+- Authentication systems
+- Admin interfaces
+- Background tasks
+- File handling
+- Email processing
+
+// Project Structure
+project_name/
+  manage.py         # Django management script
+  config/           # Project configuration
+    settings/       # Settings modules
+      base.py       # Base settings
+      local.py      # Local development
+      prod.py       # Production settings
+    urls.py         # Root URL config
+    wsgi.py         # WSGI config
+    asgi.py         # ASGI config
+  apps/             # Django applications
+    core/           # Core functionality
+      models.py     # Database models
+      views.py      # View logic
+      urls.py       # URL patterns
+      admin.py      # Admin interface
+      forms.py      # Form definitions
+    users/          # User management
+    api/            # API endpoints
+  services/         # Business logic
+    handlers/       # Service handlers
+    tasks/          # Background tasks
+  utils/            # Utility functions
+  templates/        # HTML templates
+  static/           # Static files
+  media/            # User uploads
+  tests/            # Test suites
+    unit/           # Unit tests
+    integration/    # Integration tests
+  docs/             # Documentation
+
+// Development Guidelines
+1. Django Patterns:
+   - Use class-based views
+   - Implement proper models
+   - Handle forms properly
+   - Use proper middleware
+   - Implement proper signals
+   - Handle migrations properly
+
+2. Database Best Practices:
+   - Use proper indexes
+   - Optimize queries
+   - Handle transactions
+   - Use proper models
+   - Implement migrations
+   - Handle connections
+
+3. Security Practices:
+   - Use proper authentication
+   - Handle permissions
+   - Implement CSRF
+   - Use proper validation
+   - Handle sessions
+   - Secure file uploads
+
+// Dependencies
+Core:
+- python: ">=3.9,<4.0"
+- django: "~4.2.0"
+- djangorestframework: "~3.14.0"
+- celery: "~5.3.0"
+- psycopg2-binary: "~2.9.0"
+- python-dotenv: "~1.0.0"
+- gunicorn: "~21.2.0"
+
+Optional:
+- django-debug-toolbar: "~4.2.0"
+- django-extensions: "~3.2.0"
+- pytest-django: "~4.5.0"
+- factory-boy: "~3.3.0"
+- coverage: "~7.3.0"
+
+// Code Examples:
+
+1. Model Pattern:
+```python
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
+
+User = get_user_model()
+
+class BaseModel(models.Model):
+    created_at = models.DateTimeField(
+        _("Created at"),
+        auto_now_add=True
+    )
+    updated_at = models.DateTimeField(
+        _("Updated at"),
+        auto_now=True
+    )
+    
+    class Meta:
+        abstract = True
+
+class Article(BaseModel):
+    title = models.CharField(
+        _("Title"),
+        max_length=200
+    )
+    content = models.TextField(_("Content"))
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="articles",
+        verbose_name=_("Author")
+    )
+    status = models.CharField(
+        _("Status"),
+        max_length=20,
+        choices=[
+            ("draft", _("Draft")),
+            ("published", _("Published")),
+        ],
+        default="draft"
+    )
+    tags = models.ManyToManyField(
+        "Tag",
+        related_name="articles",
+        verbose_name=_("Tags")
+    )
+    
+    class Meta:
+        verbose_name = _("Article")
+        verbose_name_plural = _("Articles")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "-created_at"]),
+        ]
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        # Custom save logic
+        super().save(*args, **kwargs)
+```
+
+2. View Pattern:
+```python
+from django.views.generic import ListView, DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Prefetch
+from django.utils.translation import gettext as _
+from django.contrib import messages
+
+class ArticleListView(LoginRequiredMixin, ListView):
+    model = Article
+    template_name = "articles/list.html"
+    context_object_name = "articles"
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return (
+            Article.objects
+            .select_related("author")
+            .prefetch_related(
+                Prefetch(
+                    "tags",
+                    queryset=Tag.objects.only("name")
+                )
+            )
+            .filter(status="published")
+            .order_by("-created_at")
+        )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = _("Articles")
+        return context
+
+class ArticleDetailView(LoginRequiredMixin, DetailView):
+    model = Article
+    template_name = "articles/detail.html"
+    context_object_name = "article"
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        
+        if not self.request.user.has_perm("view_article", obj):
+            messages.error(
+                self.request,
+                _("You don't have permission to view this article")
+            )
+            raise PermissionDenied
+        
+        return obj
+```
+
+3. Form Pattern:
+```python
+from django import forms
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
+class ArticleForm(forms.ModelForm):
+    tags = forms.CharField(
+        required=False,
+        help_text=_("Comma separated tags")
+    )
+    
+    class Meta:
+        model = Article
+        fields = ["title", "content", "status", "tags"]
+        widgets = {
+            "content": forms.Textarea(
+                attrs={"rows": 10}
+            ),
+        }
+    
+    def clean_tags(self):
+        tags = self.cleaned_data["tags"]
+        if not tags:
+            return []
+        
+        tag_names = [
+            name.strip()
+            for name in tags.split(",")
+            if name.strip()
+        ]
+        
+        if len(tag_names) > 5:
+            raise ValidationError(
+                _("Maximum 5 tags allowed")
+            )
+        
+        return tag_names
+    
+    def save(self, commit=True):
+        article = super().save(commit=False)
+        
+        if commit:
+            article.save()
+            
+            # Handle tags
+            if "tags" in self.cleaned_data:
+                tags = []
+                for tag_name in self.cleaned_data["tags"]:
+                    tag, _ = Tag.objects.get_or_create(
+                        name=tag_name
+                    )
+                    tags.append(tag)
+                article.tags.set(tags)
+        
+        return article
+```
+
+// Best Practices:
+1. Follow Django conventions
+2. Use proper models
+3. Implement caching
+4. Handle errors properly
+5. Use proper forms
+6. Write comprehensive tests
+7. Document code properly
+8. Use proper logging
+9. Handle updates properly
+10. Optimize performance
+
+// Security Considerations:
+1. Validate user input
+2. Use proper authentication
+3. Handle permissions
+4. Implement CSRF protection
+5. Secure file uploads
+6. Use proper session handling
+7. Implement rate limiting
+8. Handle sensitive data
+9. Use secure headers
+10. Follow security updates

@@ -1,1 +1,172 @@
-You are an expert in Python, FastAPI, and scalable API development.Write concise, technical responses with accurate Python examples.Use functional, declarative programming; avoid classes where possible.Prefer iteration and modularization over code duplication.Use descriptive variable names with auxiliary verbs (e.g., is_active, has_permission).Use lowercase with underscores for directories and files (e.g., routers/user_routes.py).Favor named exports for routes and utility functions.Use the Receive an Object, Return an Object (RORO) pattern.Use def for pure functions and async def for asynchronous operations.Use type hints for all function signatures. Prefer Pydantic models over raw dictionaries for input validation.File structure: exported router, sub-routes, utilities, static content, types (models, schemas).Avoid unnecessary curly braces in conditional statements.For single-line statements in conditionals, omit curly braces.Use concise, one-line syntax for simple conditional statements (e.g., if condition: do_something()).Prioritize error handling and edge cases:FastAPIPydantic v2Async database libraries like asyncpg or aiomysqlSQLAlchemy 2.0 (if using ORM features)Use functional components (plain functions) and Pydantic models for input validation and response schemas.Use declarative route definitions with clear return type annotations.Use def for synchronous operations and async def for asynchronous ones.Minimize @app.on_event("startup") and @app.on_event("shutdown"); prefer lifespan context managers for managing startup and shutdown events.Use middleware for logging, error monitoring, and performance optimization.Optimize for performance using async functions for I/O-bound tasks, caching strategies, and lazy loading.Use HTTPException for expected errors and model them as specific HTTP responses.Use middleware for handling unexpected errors, logging, and error monitoring.Use Pydantic's BaseModel for consistent input/output validation and response schemas.Minimize blocking I/O operations; use asynchronous operations for all database calls and external API requests.Implement caching for static and frequently accessed data using tools like Redis or in-memory stores.Optimize data serialization and deserialization with Pydantic.Use lazy loading techniques for large datasets and substantial API responses.Refer to FastAPI documentation for Data Models, Path Operations, and Middleware for best practices.
+// FastAPI Best Practices Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A production-grade FastAPI application following industry best practices:
+- Enterprise-level API architecture
+- Scalable and maintainable codebase
+- Type-safe and validated endpoints
+- Comprehensive error handling
+- Performance-optimized services
+- Security-first approach
+- Automated testing suite
+
+// Project Structure
+src/
+  api/              # API layer
+    v1/             # API version
+      endpoints/    # Route handlers
+      models/       # Pydantic models
+  core/             # Core application code
+    config/         # Configuration management
+    security/       # Authentication & authorization
+    logging/        # Logging configuration
+  db/               # Database
+    models/         # SQLAlchemy models
+    migrations/     # Alembic migrations
+    repositories/   # Database operations
+  services/         # Business logic
+  tests/            # Test suites
+    unit/
+    integration/
+  utils/            # Utility functions
+  main.py           # Application entry point
+
+// Development Guidelines
+1. API Design:
+   - Use semantic versioning for API endpoints
+   - Implement comprehensive request/response validation
+   - Follow REST principles consistently
+   - Use appropriate HTTP methods and status codes
+   - Implement proper error responses
+   - Document all endpoints with OpenAPI specs
+
+2. Code Organization:
+   - Separate concerns (API, business logic, data access)
+   - Use dependency injection
+   - Implement repository pattern for data access
+   - Keep controllers thin, services rich
+   - Use proper type annotations
+   - Follow single responsibility principle
+
+3. Performance:
+   - Use async/await for I/O operations
+   - Implement proper database indexing
+   - Use connection pooling
+   - Implement caching strategies
+   - Use background tasks for heavy operations
+   - Monitor and optimize response times
+
+4. Testing:
+   - Write unit tests for business logic
+   - Implement integration tests for APIs
+   - Use pytest for testing
+   - Mock external dependencies
+   - Maintain high test coverage
+   - Use test factories for data generation
+
+// Dependencies
+Core:
+- fastapi>=0.100.0
+- pydantic>=2.0.0
+- sqlalchemy>=2.0.0
+- alembic>=1.11.0
+- uvicorn>=0.23.0
+- python-jose[cryptography]
+- passlib[bcrypt]
+- pytest>=7.4.0
+
+Optional:
+- celery
+- redis
+- prometheus-client
+- sentry-sdk
+- pytest-cov
+- pytest-asyncio
+
+// Code Examples:
+
+1. Dependency Injection Pattern:
+```python
+from fastapi import Depends, FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession
+
+app = FastAPI()
+
+async def get_db() -> AsyncSession:
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+async def get_current_user(
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme)
+) -> User:
+    return await auth_service.get_current_user(db, token)
+```
+
+2. Repository Pattern:
+```python
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+class UserRepository:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+    
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        query = select(User).where(User.id == user_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+    
+    async def create(self, user: UserCreate) -> User:
+        db_user = User(**user.dict())
+        self.session.add(db_user)
+        await self.session.commit()
+        await self.session.refresh(db_user)
+        return db_user
+```
+
+3. Service Layer Pattern:
+```python
+class UserService:
+    def __init__(self, repo: UserRepository):
+        self.repo = repo
+    
+    async def create_user(self, user: UserCreate) -> User:
+        # Business logic validation
+        if await self.repo.get_by_email(user.email):
+            raise HTTPException(400, "Email already registered")
+        
+        # Hash password
+        user.password = get_password_hash(user.password)
+        
+        # Create user
+        return await self.repo.create(user)
+```
+
+// Best Practices:
+1. Use Pydantic for data validation
+2. Implement proper error handling
+3. Use async operations where appropriate
+4. Implement proper logging
+5. Use dependency injection
+6. Follow REST best practices
+7. Implement proper security measures
+8. Use proper database migrations
+9. Implement proper testing
+10. Use proper documentation
+
+// Security Considerations:
+1. Use proper authentication
+2. Implement authorization
+3. Validate all inputs
+4. Use HTTPS only
+5. Implement rate limiting
+6. Use secure password hashing
+7. Implement proper CORS
+8. Use secure headers
+9. Implement audit logging
+10. Use proper session management

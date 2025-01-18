@@ -1,1 +1,233 @@
-You are an expert in Python, FastAPI, and scalable API development.  Key Principles - Write concise, technical responses with accurate Python examples. - Use functional, declarative programming; avoid classes where possible. - Prefer iteration and modularization over code duplication. - Use descriptive variable names with auxiliary verbs (e.g., is_active, has_permission). - Use lowercase with underscores for directories and files (e.g., routers/user_routes.py). - Favor named exports for routes and utility functions. - Use the Receive an Object, Return an Object (RORO) pattern.  Python/FastAPI - Use def for pure functions and async def for asynchronous operations. - Use type hints for all function signatures. Prefer Pydantic models over raw dictionaries for input validation. - File structure: exported router, sub-routes, utilities, static content, types (models, schemas). - Avoid unnecessary curly braces in conditional statements. - For single-line statements in conditionals, omit curly braces. - Use concise, one-line syntax for simple conditional statements (e.g., if condition: do_something()).  Error Handling and Validation - Prioritize error handling and edge cases:  - Handle errors and edge cases at the beginning of functions.  - Use early returns for error conditions to avoid deeply nested if statements.  - Place the happy path last in the function for improved readability.  - Avoid unnecessary else statements; use the if-return pattern instead.  - Use guard clauses to handle preconditions and invalid states early.  - Implement proper error logging and user-friendly error messages.  - Use custom error types or error factories for consistent error handling.  Dependencies - FastAPI - Pydantic v2 - Async database libraries like asyncpg or aiomysql - SQLAlchemy 2.0 (if using ORM features)  FastAPI-Specific Guidelines - Use functional components (plain functions) and Pydantic models for input validation and response schemas. - Use declarative route definitions with clear return type annotations. - Use def for synchronous operations and async def for asynchronous ones. - Minimize @app.on_event("startup") and @app.on_event("shutdown"); prefer lifespan context managers for managing startup and shutdown events. - Use middleware for logging, error monitoring, and performance optimization. - Optimize for performance using async functions for I/O-bound tasks, caching strategies, and lazy loading. - Use HTTPException for expected errors and model them as specific HTTP responses. - Use middleware for handling unexpected errors, logging, and error monitoring. - Use Pydantic's BaseModel for consistent input/output validation and response schemas.   Performance Optimization - Minimize blocking I/O operations; use asynchronous operations for all database calls and external API requests. - Implement caching for static and frequently accessed data using tools like Redis or in-memory stores. - Optimize data serialization and deserialization with Pydantic. - Use lazy loading techniques for large datasets and substantial API responses.   Key Conventions 1. Rely on FastAPI’s dependency injection system for managing state and shared resources. 2. Prioritize API performance metrics (response time, latency, throughput). 3. Limit blocking operations in routes:   - Favor asynchronous and non-blocking flows.   - Use dedicated async functions for database and external API operations.   - Structure routes and dependencies clearly to optimize readability and maintainability.   Refer to FastAPI documentation for Data Models, Path Operations, and Middleware for best practices.
+// FastAPI Modern API Development Guide
+// Author: {{AUTHOR_NAME}} ({{GITHUB_USERNAME}})
+
+// What you can build with this ruleset:
+A modern FastAPI application with:
+- High-performance REST APIs
+- Real-time WebSocket endpoints
+- Async database operations
+- OpenAPI documentation
+- Type-safe request/response handling
+- Authentication and authorization
+- Background tasks
+- Middleware integrations
+
+// Project Structure
+src/
+  main.py          # Application entry point
+  core/            # Core functionality
+    config.py      # Configuration
+    security.py    # Security utilities
+    logging.py     # Logging setup
+  api/             # API endpoints
+    v1/            # API version 1
+      routes/      # Route modules
+      models/      # Pydantic models
+      deps.py      # Dependencies
+  db/              # Database
+    models.py      # SQLAlchemy models
+    session.py     # DB session
+    migrations/    # Alembic migrations
+  services/        # Business logic
+  schemas/         # Pydantic schemas
+  utils/           # Utilities
+  tests/           # Test suites
+    api/           # API tests
+    services/      # Service tests
+
+// Development Guidelines
+1. API Design:
+   - Use functional programming
+   - Implement proper validation
+   - Handle errors gracefully
+   - Use proper typing
+   - Implement proper documentation
+   - Follow REST principles
+
+2. Performance Patterns:
+   - Use async operations
+   - Implement caching
+   - Optimize database queries
+   - Use connection pooling
+   - Handle background tasks
+   - Monitor performance
+
+3. Code Organization:
+   - Separate concerns properly
+   - Use dependency injection
+   - Implement proper logging
+   - Handle configuration
+   - Use proper middleware
+   - Follow clean architecture
+
+// Dependencies
+Core:
+- fastapi: "^0.104.0"
+- pydantic: "^2.4.0"
+- sqlalchemy: "^2.0.0"
+- alembic: "^1.12.0"
+- uvicorn: "^0.24.0"
+- python-jose: "^3.3.0"
+
+Optional:
+- redis: "^5.0.0"
+- celery: "^5.3.0"
+- pytest: "^7.4.0"
+- httpx: "^0.25.0"
+
+// Code Examples:
+
+1. Route Definition Pattern:
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..deps import get_db
+from ..models import UserRead, UserCreate
+from ...services.user import UserService
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+@router.get("/", response_model=List[UserRead])
+async def get_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db)
+) -> List[UserRead]:
+    """
+    Retrieve users with pagination.
+    """
+    try:
+        users = await UserService(db).get_users(skip=skip, limit=limit)
+        return users
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve users"
+        )
+
+@router.post("/", response_model=UserRead)
+async def create_user(
+    user: UserCreate,
+    db: AsyncSession = Depends(get_db)
+) -> UserRead:
+    """
+    Create a new user.
+    """
+    try:
+        return await UserService(db).create_user(user)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+```
+
+2. Service Pattern:
+```python
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import List, Optional
+
+from ..models import User
+from ..schemas import UserCreate, UserUpdate
+
+class UserService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+    
+    async def get_users(
+        self,
+        skip: int = 0,
+        limit: int = 100
+    ) -> List[User]:
+        query = select(User).offset(skip).limit(limit)
+        result = await self.db.execute(query)
+        return result.scalars().all()
+    
+    async def get_user_by_id(self, user_id: int) -> Optional[User]:
+        query = select(User).where(User.id == user_id)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+    
+    async def create_user(self, user: UserCreate) -> User:
+        db_user = User(**user.model_dump())
+        self.db.add(db_user)
+        await self.db.commit()
+        await self.db.refresh(db_user)
+        return db_user
+```
+
+3. Dependency Pattern:
+```python
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..core.config import settings
+from ..db.session import async_session
+from ..models import User
+from ..services.user import UserService
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        user_id: int = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = await UserService(db).get_user_by_id(user_id)
+    if user is None:
+        raise credentials_exception
+    return user
+```
+
+// Best Practices:
+1. Use type hints consistently
+2. Implement proper validation
+3. Handle errors gracefully
+4. Use async operations
+5. Implement proper logging
+6. Use dependency injection
+7. Follow REST principles
+8. Implement proper testing
+9. Use proper documentation
+10. Monitor performance
+
+// Security Considerations:
+1. Validate input data
+2. Use proper authentication
+3. Implement rate limiting
+4. Use secure headers
+5. Handle sensitive data
+6. Implement proper logging
+7. Use proper encryption
+8. Handle errors securely
+9. Implement CORS properly
+10. Follow security updates
